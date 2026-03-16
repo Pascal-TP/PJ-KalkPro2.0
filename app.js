@@ -1,6 +1,6 @@
 let currentUser = null;
 function isLoggedIn() {
-  return !!currentUser;
+  return !!auth.currentUser;
 }
 
 function lockAppUI() {
