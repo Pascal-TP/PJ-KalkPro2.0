@@ -149,7 +149,7 @@ const auth = getAuth(fbApp);
 
   if (user) {
      document.body.classList.add("is-logged-in");
-      startTimer();
+      
     unlockAppUI();
     if (info) info.innerText = "Angemeldet als: " + user.email;
     updateAdminUI_();
