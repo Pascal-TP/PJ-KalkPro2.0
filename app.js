@@ -408,7 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
 async function showPage(id, fromHistory = false) {
 
     // Ohne Login nur diese Seiten erlauben:
-    const publicPages = new Set(["page-login", "page-start", "page-change", "page-hinweis"]);
+    const publicPages = new Set(["page-login", "page-start", "page-change", "page-privacy", "page-hinweis"]);
 
     if (!isLoggedIn() && !publicPages.has(id)) {
         console.warn("Blocked navigation (not logged in):", id);
