@@ -276,16 +276,24 @@
                 <div class="page" id="page-3">
                     <h2>Bitte auswählen</h2>
 
-                    <button onclick="showPage('page-4')">KV</button>
-                    <button onclick="showPage('page-5')">Anfrage an NDF</button>
+                    <div class="kp-menu-grid">
 
-                    <p class="hint">
-                        KV = Kostenvoranschlag – die schnelle und direkte Ermittlung eines Richtpreises für den
-                        Kunden<br><br>
-                        Anfrage an NDF – Ermittlung eines Richtpreises für den Kunden, jedoch mit der Möglichkeit
-                        ein
-                        qualifiziertes Angebot von NDF per Mail anzufragen.<br>
-                    </p>
+                        <div class="kp-menu-card" onclick="showPage('page-4')">
+                            <h3>KV</h3>
+                            <p>
+                                Kostenvoranschlag – schnelle und direkte Ermittlung eines Richtpreises für den Kunden.
+                            </p>
+                        </div>
+
+                        <div class="kp-menu-card" onclick="showPage('page-5')">
+                            <h3>Anfrage an NDF</h3>
+                            <p>
+                                Anfrage mit Projektdaten, optionalen Detailangaben, Uploads und anschließendem Versand
+                                per E-Mail an NDF.
+                            </p>
+                        </div>
+
+                    </div>
                     <button id="btnExportLog" class="hidden" onclick="exportLoginLog()">Login-Log
                         herunterladen</button>
 
@@ -295,9 +303,25 @@
                 <div class="page" id="page-4">
                     <h2>Hauptmenü</h2>
 
-                    <button onclick="showPage('page-6')">Sanierung</button>
-                    <button onclick="showPage('page-7')">Neubau</button>
-                    <br>
+                    <div class="kp-menu-grid">
+
+                        <div class="kp-menu-card" onclick="showPage('page-6')">
+                            <h3>Sanierung</h3>
+                            <p>
+                                Auswahl der Systeme für Bestandsgebäude, z. B. Frässystem, 3 mm Klett, Trockenbau und
+                                Estrich.
+                            </p>
+                        </div>
+
+                        <div class="kp-menu-card" onclick="showPage('page-7')">
+                            <h3>Neubau</h3>
+                            <p>
+                                Auswahl der Systeme für Neubauprojekte, z. B. Tacker-, Klett-, Noppen- und
+                                Industriebodensystem.
+                            </p>
+                        </div>
+
+                    </div>
                 </div>
 
                 <!-- SEITE 5: ANFRAGE AN NDF -->
@@ -646,10 +670,10 @@
 
                     <!-- Auswahlbuttons untereinander -->
                     <div>
-                        <button onclick="showPage('page-8')">Fräsen</button><br>
-                        <button onclick="showPage('page-9')">Estrich</button><br>
-                        <button onclick="showPage('page-10')">Klett 3mm</button><br>
-                        <button onclick="showPage('page-11')">Trockenbau</button>
+                        <button class="submenu-button" onclick="showPage('page-8')">Fräsen</button><br>
+                        <button class="submenu-button" onclick="showPage('page-9')">Estrich</button><br>
+                        <button class="submenu-button" onclick="showPage('page-10')">Klett 3mm</button><br>
+                        <button class="submenu-button" onclick="showPage('page-11')">Trockenbau</button>
                     </div>
 
                 </div>
@@ -660,13 +684,13 @@
 
                     <!-- Auswahlbuttons untereinander -->
                     <div>
-                        <button onclick="showPage('page-9')">Estrich</button><br>
-                        <button onclick="showPage('page-13')">unbeheizte Fläche</button><br>
-                        <button onclick="showPage('page-14-1')">Tackersystem</button><br>
-                        <button onclick="showPage('page-26')">Klettsystem</button><br>
-                        <button onclick="showPage('page-29')">Noppensystem</button><br>
-                        <button onclick="showPage('page-33')">Industrieboden</button><br>
-                        <button onclick="showPage('page-18')">Unterdämmung</button>
+                        <button class="submenu-button" onclick="showPage('page-9')">Estrich</button><br>
+                        <button class="submenu-button" onclick="showPage('page-13')">unbeheizte Fläche</button><br>
+                        <button class="submenu-button" onclick="showPage('page-14-1')">Tackersystem</button><br>
+                        <button class="submenu-button" onclick="showPage('page-26')">Klettsystem</button><br>
+                        <button class="submenu-button" onclick="showPage('page-29')">Noppensystem</button><br>
+                        <button class="submenu-button" onclick="showPage('page-33')">Industrieboden</button><br>
+                        <button class="submenu-button" onclick="showPage('page-18')">Unterdämmung</button>
                     </div>
 
                 </div>
@@ -688,9 +712,9 @@
                 <div class="page" id="page-14-1">
                     <h2>Auswahl Marke</h2>
 
-                    <button onclick="showPage('page-14')">Handelsmarke</button>
-                    <button onclick="showPage('page-14-2')">Uponor</button>
-                    <button onclick="showPage('page-14-3')">Roth</button>
+                    <button class="submenu-button" onclick="showPage('page-14')">Handelsmarke</button>
+                    <button class="submenu-button" onclick="showPage('page-14-2')">Uponor</button>
+                    <button class="submenu-button" onclick="showPage('page-14-3')">Roth</button>
 
                 </div>
 
@@ -871,9 +895,10 @@
 
                     <!-- Auswahlbuttons untereinander -->
                     <div>
-                        <button onclick="showPage('page-23')">Aufbau 50mm</button><br>
-                        <button onclick="showPage('page-24')">Aufbau 20/30mm + 3mm Deckschicht</button><br>
-                        <button onclick="showPage('page-25')">Aufbau 25mm (XPS)</button><br>
+                        <button class="submenu-button" onclick="showPage('page-23')">Aufbau 50mm</button><br>
+                        <button class="submenu-button" onclick="showPage('page-24')">Aufbau 20/30mm + 3mm
+                            Deckschicht</button><br>
+                        <button class="submenu-button" onclick="showPage('page-25')">Aufbau 25mm (XPS)</button><br>
                     </div>
 
                 </div>
@@ -918,8 +943,8 @@
                 <div class="page" id="page-26">
                     <h2>Auswahl Marke Klettsystem</h2>
 
-                    <button onclick="showPage('page-27')">Handelsmarke</button>
-                    <button onclick="showPage('page-28')">Uponor</button>
+                    <button class="submenu-button" onclick="showPage('page-27')">Handelsmarke</button>
+                    <button class="submenu-button" onclick="showPage('page-28')">Uponor</button>
                     <br><br>
 
                 </div>
@@ -928,9 +953,9 @@
                 <div class="page" id="page-29">
                     <h2>Auswahl Marke Noppensystem</h2>
 
-                    <button onclick="showPage('page-30')">Handelsmarke</button>
-                    <button onclick="showPage('page-31')">Uponor</button>
-                    <button onclick="showPage('page-32')">Roth</button>
+                    <button class="submenu-button" onclick="showPage('page-30')">Handelsmarke</button>
+                    <button class="submenu-button" onclick="showPage('page-31')">Uponor</button>
+                    <button class="submenu-button" onclick="showPage('page-32')">Roth</button>
                     <br><br>
 
                 </div>
