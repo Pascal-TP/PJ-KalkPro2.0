@@ -4875,32 +4875,32 @@ async function sharePdf() {
 window.sharePdf = sharePdf;
 
 async function printPage40PdfBlob() {
+    let url = null;
+
     try {
         showLoader40(true);
 
         const { blob } = await buildPage40PdfBlob();
-        const url = URL.createObjectURL(blob);
+        url = URL.createObjectURL(blob);
 
-        const iframe = document.createElement("iframe");
-        iframe.style.position = "fixed";
-        iframe.style.right = "0";
-        iframe.style.bottom = "0";
-        iframe.style.width = "0";
-        iframe.style.height = "0";
-        iframe.style.border = "0";
-        iframe.src = url;
+        const printWindow = window.open(url, "_blank");
 
-        iframe.onload = () => {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
+        if (!printWindow) {
+            showHinweis("Der Druck konnte nicht geöffnet werden. Bitte Pop-up-Blocker prüfen oder die PDF herunterladen.");
+            return;
+        }
 
+        printWindow.onload = () => {
             setTimeout(() => {
-                URL.revokeObjectURL(url);
-                iframe.remove();
-            }, 3000);
+                printWindow.focus();
+                printWindow.print();
+            }, 800);
         };
 
-        document.body.appendChild(iframe);
+        // Nicht sofort schließen/revoken!
+        setTimeout(() => {
+            if (url) URL.revokeObjectURL(url);
+        }, 60000);
 
     } catch (err) {
         console.error("printPage40PdfBlob Fehler:", err);
