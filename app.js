@@ -1838,14 +1838,6 @@ function direktZumAngebot() {
 }
 
 // -----------------------------
-// SEITE 40 – printPage - (Button "Drucken / als PDF speichern")
-// -----------------------------
-
-function printPage40() {
-    window.print();
-}
-
-// -----------------------------
 // SEITE 40 – sendMail - (Button "Als Text-Mail versenden")
 // -----------------------------
 
@@ -4881,6 +4873,44 @@ async function sharePdf() {
 }
 
 window.sharePdf = sharePdf;
+
+async function printPage40PdfBlob() {
+    try {
+        showLoader40(true);
+
+        const { blob } = await buildPage40PdfBlob();
+        const url = URL.createObjectURL(blob);
+
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "0";
+        iframe.src = url;
+
+        iframe.onload = () => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                iframe.remove();
+            }, 3000);
+        };
+
+        document.body.appendChild(iframe);
+
+    } catch (err) {
+        console.error("printPage40PdfBlob Fehler:", err);
+        showHinweis("Der Ausdruck konnte nicht vorbereitet werden:\n" + (err?.message || err));
+    } finally {
+        showLoader40(false);
+    }
+}
+
+window.printPage40PdfBlob = printPage40PdfBlob;
 
 async function buildPage40PdfBlob() {
     const oldScrollX = window.scrollX || 0;
