@@ -310,12 +310,23 @@ const auth = getAuth(fbApp);
 
         const mainNav = document.getElementById("kp-main-nav");
 
+        const summaryContent = document.getElementById("kp-selection-summary");
+
         if (user) {
             if (actions) actions.classList.remove("hidden");
             if (mainNav) mainNav.classList.remove("hidden");
+
+            if (summaryContent) {
+                summaryContent.classList.remove("hidden");
+            }
+
         } else {
             if (actions) actions.classList.add("hidden");
             if (mainNav) mainNav.classList.add("hidden");
+
+            if (summaryContent) {
+                summaryContent.classList.add("hidden");
+            }
         }
 
         // 🔥 ERST JETZT App sichtbar machen
