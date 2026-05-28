@@ -1,85 +1,85 @@
 body {
-    margin: 0;
-    font-family: "Segoe UI", sans-serif;
-    background: #efefef;
-    text-align: center;
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #efefef;
+  text-align: center;
 }
 
 .logo {
-    margin: 150px auto 30px;
-    display: block;
-    width: 50%;
-    max-width: 400px;
+  margin: 150px auto 30px;
+  display: block;
+  width: 50%;
+  max-width: 400px;
 }
 
 .page {
-    display: none;
+  display: none;
 }
 
 .page.active {
-    display: block;
+  display: block;
 }
 
 input,
 select,
 textarea {
-    display: block;
-    margin: 10px auto;
-    padding: 10px;
-    width: 250px;
-    background: #fff6d5;
-    border: 1px solid #ccc;
-    border-radius: 0;
-    box-sizing: border-box;
-    font: inherit;
+  display: block;
+  margin: 10px auto;
+  padding: 10px;
+  width: 250px;
+  background: #fff6d5;
+  border: 1px solid #ccc;
+  border-radius: 0;
+  box-sizing: border-box;
+  font: inherit;
 }
 
 button {
-    background: #0b2a4a;
-    color: white;
-    border: none;
-    padding: 12px 22px;
-    margin: 6px;
-    cursor: pointer;
-    border-radius: 6px;
-    font-weight: 600;
-    transition: 0.2s ease;
+  background: #0b2a4a;
+  color: white;
+  border: none;
+  padding: 12px 22px;
+  margin: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: 0.2s ease;
 }
 
 button:hover {
-    background: #163f6f;
-    transform: translateY(-1px);
+  background: #163f6f;
+  transform: translateY(-1px);
 }
 
 button:active {
-    transform: translateY(0px);
+  transform: translateY(0px);
 }
 
 .error {
-    color: darkred;
-    margin: 10px;
+  color: darkred;
+  margin: 10px;
 }
 
 .hint {
-    max-width: 600px;
-    margin: 20px auto;
-    font-size: 14px;
+  max-width: 600px;
+  margin: 20px auto;
+  font-size: 14px;
 }
 
 #release-info {
-    position: fixed;
-    top: 10px;
-    right: 15px;
-    font-size: 14px;
-    text-align: right;
+  position: fixed;
+  top: 10px;
+  right: 15px;
+  font-size: 14px;
+  text-align: right;
 }
 
 #timer {
-    position: fixed;
-    top: 30px;
-    right: 15px;
-    font-size: 14px;
-    text-align: right;
+  position: fixed;
+  top: 30px;
+  right: 15px;
+  font-size: 14px;
+  text-align: right;
 }
 
 #login-info {
@@ -98,103 +98,150 @@ button:active {
 /* ================================
    TITEL / UNTERTITEL / ZWISCHENTITEL – global
 ================================ */
-.title { text-align: center;font-weight: bold; font-size: 24px; margin-top: 25px; }
-.subtitle { text-align: center;font-weight: bold; font-size: 18px; margin-top: 20px; }
-.midtitle { text-align: center;font-weight: bold; font-size: 16px; margin-top: 15px; }
+.title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 24px;
+  margin-top: 25px;
+}
+
+.subtitle {
+  text-align: center;
+  font-weight: bold;
+  font-size: 18px;
+  margin-top: 20px;
+}
+
+.midtitle {
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  margin-top: 15px;
+}
 
 .price-table {
-    max-width: 1200px;
-    margin: auto;
-    padding: 20px;
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
 }
 
 .price-table .row {
-    display: grid;
-    grid-template-columns: 160px 4fr 100px 100px 120px 120px;
-    gap: 15px;
-    margin-bottom: 12px;
-    align-items: center;
+  display: grid;
+  grid-template-columns: 160px 4fr 100px 100px 120px 120px;
+  gap: 15px;
+  margin-bottom: 12px;
+  align-items: center;
 }
 
-.price-table .col-a { text-align: left; font-weight: bold; }
-.price-table .col-b { text-align: left; padding-left: 5px; }
+.price-table .col-a {
+  text-align: left;
+  font-weight: bold;
+}
+
+.price-table .col-b {
+  text-align: left;
+  padding-left: 5px;
+}
+
 .price-table .col-c,
 .price-table .col-d,
-.price-table .col-e { text-align: right; }
-.price-table .col-f { text-align: right; }
+.price-table .col-e {
+  text-align: right;
+}
+
+.price-table .col-f {
+  text-align: right;
+}
 
 
 .price-table input.menge-input {
-    background-color: #fff8dc;
-    padding: 5px;
-    width: 80px;
-    text-align: center;
+  background-color: #fff8dc;
+  padding: 5px;
+  width: 80px;
+  text-align: center;
 }
+
 /* ================================
    Smartphone – global für alle Seiten
 ================================ */
 @media (max-width: 600px) {
-    .row { display: block; }
+  .row {
+    display: block;
+  }
 
-    .row > div,
-    .row > input {
-        display: block;
-        width: 100%;
-        text-align: left;
-        margin-bottom: 5px;
-    }
+  .row>div,
+  .row>input {
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin-bottom: 5px;
+  }
 
-    input.menge-input { width: 100%; }
+  input.menge-input {
+    width: 100%;
+  }
 }
 
 #page-40 {
-    max-width: 1100px;
-    margin: auto;
-    padding: 30px;
-    background: white;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+  max-width: 1100px;
+  margin: auto;
+  padding: 30px;
+  background: white;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
 }
+
 .row {
-    display: grid;
-    grid-template-columns: 
-        80px       /* Pos */
-        1.5fr      /* Beschreibung */
-        1fr        /* Zusatz */
-        100px      /* Menge */
-        120px      /* EP */
-        120px;     /* Gesamt */
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 6px;
+  display: grid;
+  grid-template-columns:
+    80px
+    /* Pos */
+    1.5fr
+    /* Beschreibung */
+    1fr
+    /* Zusatz */
+    100px
+    /* Menge */
+    120px
+    /* EP */
+    120px;
+  /* Gesamt */
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 6px;
 }
+
 .menge-input {
-    width: 80px;
-    text-align: right;
+  width: 80px;
+  text-align: right;
 }
 
 /* ================================
    Allgemeine Hinweise (ndf4.csv)
 ================================ */
 #hinweise-content {
-    text-align: left;
+  text-align: left;
 }
 
 #hinweise-content .title,
 #hinweise-content .subtitle,
 #hinweise-content .midtitle {
-    text-align: left;
+  text-align: left;
 }
 
 #hinweise-content .hinweis-row {
-    text-align: left;
-    margin: 6px 0;
-    line-height: 1.5;
+  text-align: left;
+  margin: 6px 0;
+  line-height: 1.5;
 }
+
 #hinweise-content {
-    max-width: 1000px;
-    margin: 30px auto;
+  max-width: 1000px;
+  margin: 30px auto;
 }
-.hidden { display: none; }
+
+.hidden {
+  display: none;
+}
 
 /* ================================
    Seitenbezogene Hinweise (aus ndfX.csv, abhängig von Mengen)
@@ -234,13 +281,22 @@ button:active {
 @media print {
 
   /* alles ausblenden */
-  .page { display: none !important; }
+  .page {
+    display: none !important;
+  }
 
   /* nur Seite 40 drucken */
-  #page-40 { display: block !important; }
+  #page-40 {
+    display: block !important;
+  }
 
   /* Buttons/Nav etc. ausblenden */
-  button, .nav, #timer, #login-info, #release-info, #user-actions {
+  button,
+  .nav,
+  #timer,
+  #login-info,
+  #release-info,
+  #user-actions {
     display: none !important;
   }
 }
@@ -253,7 +309,7 @@ button:active {
   padding-bottom: 6px;
 }
 
-.table-header > div {
+.table-header>div {
   opacity: 0.9;
 }
 
@@ -267,7 +323,7 @@ body.pdf-mode #release-info {
 }
 
 /* Das „normale“ Logo oben außerhalb von Seite 40 im PDF ausblenden */
-body.pdf-mode > img.logo {
+body.pdf-mode>img.logo {
   display: none !important;
 }
 
@@ -288,13 +344,14 @@ body.pdf-mode > img.logo {
 .loader {
   position: fixed;
   inset: 0;
-  background: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.85);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 9999;
 }
+
 .loader.hidden {
   display: none !important;
 }
@@ -316,9 +373,14 @@ body.pdf-mode > img.logo {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
-body.pdf-mode #loader40 { display: none !important; }
+
+body.pdf-mode #loader40 {
+  display: none !important;
+}
 
 .hidden {
   display: none !important;
@@ -339,6 +401,7 @@ body.pdf-mode #loader40 { display: none !important; }
 html.js .no-js-message {
   display: none;
 }
+
 /* Wenn App gelockt ist: alles verstecken */
 /* … außer öffentliche Seiten */
 body.app-locked .page {
@@ -353,7 +416,8 @@ body.app-locked #page-hinweis.active {
 
 #user-actions {
   position: fixed;
-  top: 70px;        /* unterhalb von login-info */
+  top: 70px;
+  /* unterhalb von login-info */
   right: 15px;
   text-align: right;
   z-index: 1000;
@@ -369,7 +433,8 @@ body.app-locked #page-hinweis.active {
 
 #user-action-select option[value="logout"] {
   font-weight: 700;
-  color: #b00020; /* dezentes Rot */
+  color: #b00020;
+  /* dezentes Rot */
 }
 
 .start-slogan {
@@ -378,6 +443,7 @@ body.app-locked #page-hinweis.active {
   font-weight: 500;
   color: #333;
 }
+
 /* Seite 40: falls Inhalt breiter wird, sauber horizontal scrollen statt „verschoben wirken“ */
 #page-40 {
   overflow-x: auto;
@@ -551,8 +617,8 @@ button.btn-disabled:hover {
 
 /* Pflichtfelder */
 .required {
-    border: 2px solid #e74c3c;
-    background-color: #fff6f6;
+  border: 2px solid #e74c3c;
+  background-color: #fff6f6;
 }
 
 .modal {
@@ -563,7 +629,7 @@ button.btn-disabled:hover {
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.4);
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
 .modal-content {
@@ -574,6 +640,314 @@ button.btn-disabled:hover {
   text-align: center;
   border-radius: 6px;
 }
+
 .modal-content button {
   cursor: pointer;
+}
+
+/* =========================================
+   KalkPro 2.0 Kachel-Layout
+========================================= */
+
+:root {
+  --primary: #0b2a4a;
+  --primary-hover: #163f6f;
+  --bg: #efefef;
+  --card: #ffffff;
+  --input: #fff6d5;
+  --border: #d7d7d7;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --accent: #e9f1f8;
+  --danger: #b00020;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --radius: 14px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Kopfbereich */
+.kp-hero {
+  max-width: 1500px;
+  margin: 18px auto 14px auto;
+  padding: 0 18px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 18px;
+}
+
+.kp-hero-left {
+  text-align: left;
+}
+
+.kp-hero .logo {
+  margin: 0;
+  width: 260px;
+  max-width: 100%;
+}
+
+.kp-hero-right {
+  min-width: 260px;
+  text-align: right;
+  font-size: 14px;
+}
+
+#release-info,
+#timer,
+#login-info {
+  position: static;
+  top: auto;
+  right: auto;
+  margin-bottom: 4px;
+}
+
+/* Grundraster */
+.kp-shell {
+  max-width: 1500px;
+  margin: 0 auto 30px auto;
+  padding: 0 18px;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 280px;
+  gap: 18px;
+  align-items: start;
+}
+
+.kp-nav-card,
+.kp-content-card,
+.kp-summary-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.kp-nav-card,
+.kp-summary-card {
+  padding: 16px;
+  position: sticky;
+  top: 14px;
+}
+
+.kp-content-card {
+  padding: 24px;
+  min-height: 620px;
+  overflow-x: auto;
+}
+
+.kp-nav-card h2,
+.kp-summary-card h2 {
+  margin: 0 0 14px 0;
+  font-size: 18px;
+  color: var(--primary);
+}
+
+/* Linke Navigation */
+.kp-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kp-nav-item {
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  text-align: left;
+  border-radius: 10px;
+  background: #f3f6f9;
+  color: var(--text);
+  border: 1px solid transparent;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.kp-nav-item:hover {
+  background: var(--accent);
+  transform: none;
+}
+
+.kp-nav-item.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.kp-nav-item.parent-active {
+  background: #dce9f5;
+  color: var(--primary);
+  border-color: #bdd2e8;
+}
+
+.kp-nav-item.sub {
+  padding-left: 26px;
+  font-size: 13px;
+}
+
+.kp-nav-item.sub-2 {
+  padding-left: 42px;
+  font-size: 12.5px;
+}
+
+.kp-nav-item.danger {
+  color: var(--danger);
+  background: #fff4f4;
+}
+
+.kp-nav-item.danger:hover {
+  background: #ffe4e4;
+}
+
+.kp-login-nav {
+  margin-bottom: 10px;
+}
+
+.kp-subnav {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+.kp-subnav.open {
+  display: flex;
+}
+
+/* Rechte Auswahl */
+.kp-summary-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 13px;
+}
+
+.kp-summary-item span {
+  color: var(--muted);
+}
+
+.kp-summary-item strong {
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.kp-empty-summary {
+  color: var(--muted);
+  font-size: 14px;
+  text-align: left;
+}
+
+/* Uploadbereich */
+.upload-box {
+  max-width: 620px;
+  margin: 20px auto;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f9fafb;
+}
+
+#request-files {
+  background: var(--input);
+}
+
+.upload-progress-container {
+  display: none;
+  width: 250px;
+  max-width: 100%;
+  height: 10px;
+  margin: 10px auto 4px auto;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.upload-progress-bar {
+  width: 0%;
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.2s ease;
+}
+
+.upload-progress-text {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.file-list {
+  max-width: 520px;
+  margin: 12px auto 0 auto;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.file-name {
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.file-item button {
+  padding: 7px 10px;
+  margin: 0;
+  font-size: 12px;
+  background: #fff4f4;
+  color: var(--danger);
+}
+
+.file-item button:hover {
+  background: #ffe4e4;
+}
+
+/* Inhaltsseiten im neuen Card-Layout */
+.kp-content-card .page {
+  width: 100%;
+}
+
+.kp-content-card .hint {
+  max-width: 850px;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .kp-shell {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .kp-summary-card {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .kp-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .kp-hero-right {
+    text-align: left;
+  }
+
+  .kp-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .kp-nav-card {
+    position: static;
+  }
 }

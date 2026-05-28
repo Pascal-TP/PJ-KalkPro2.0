@@ -1,14 +1,14 @@
 let currentUser = null;
 function isLoggedIn() {
-  return !!auth.currentUser || !!currentUser;
+    return !!auth.currentUser || !!currentUser;
 }
 
 function lockAppUI() {
-  document.body.classList.add("app-locked");
+    document.body.classList.add("app-locked");
 }
 
 function unlockAppUI() {
-  document.body.classList.remove("app-locked");
+    document.body.classList.remove("app-locked");
 }
 
 let logoutTimer;
@@ -23,9 +23,9 @@ let page40Promise = null;
 // -----------------------------
 
 function startSplashScreen() {
-  setTimeout(() => {
-    showPage("page-login");
-  }, 3000);
+    setTimeout(() => {
+        showPage("page-login");
+    }, 3000);
 }
 
 // -----------------------------
@@ -33,71 +33,159 @@ function startSplashScreen() {
 // -----------------------------
 
 function resetStoredInputsOnReload() {
-  // Reload erkennen (F5 / Browser-Reload)
-  const nav = performance.getEntriesByType("navigation")[0];
-  const isReload = nav && nav.type === "reload";
+    // Reload erkennen (F5 / Browser-Reload)
+    const nav = performance.getEntriesByType("navigation")[0];
+    const isReload = nav && nav.type === "reload";
 
-  if (!isReload) return;
+    if (!isReload) return;
 
-  fraesenVerwendet = false;
-  fraesenHinweisGezeigt = false;
+    fraesenVerwendet = false;
+    fraesenHinweisGezeigt = false;
 
-  // Nur deine Eingabe-/Angebotsdaten löschen (Auth bleibt erhalten!)
-  const keysToRemove = [
-    "page5Data",
-    "angebotTyp",
-    "angebotSummen",
+    // Nur deine Eingabe-/Angebotsdaten löschen (Auth bleibt erhalten!)
+    const keysToRemove = [
+        "page5Data",
+        "angebotTyp",
+        "angebotSummen",
 
-    "page14Data",
-    "page142Data",
-    "page8Data",
-    "page18Data",
-    "page20Data",
-    "page21Data",
-    "page22Data",
-    "page9Data",
-    "page10Data",
-    "page23Data",
-    "page24Data"
-  ];
+        "page14Data",
+        "page142Data",
+        "page8Data",
+        "page18Data",
+        "page20Data",
+        "page21Data",
+        "page22Data",
+        "page9Data",
+        "page10Data",
+        "page23Data",
+        "page24Data",
+        "uploadedFiles"
+    ];
 
-  keysToRemove.forEach(k => localStorage.removeItem(k));
+    void clearUploadedFilesFromStorage();
+
+    keysToRemove.forEach(k => localStorage.removeItem(k));
 }
-
-// SOFORT ausführen (möglichst früh)
-resetStoredInputsOnReload();
 
 // -----------------------------
 // Drop-down Menü
 // -----------------------------
 
 function handleUserAction(val) {
-  if (!val) return;
+    if (!val) return;
 
-// ✅ Navigationseinträge
-  if (val.startsWith("nav:")) {
-    const pageId = val.replace("nav:", "");
-    showPage(pageId);
+    // ✅ Navigationseinträge
+    if (val.startsWith("nav:")) {
+        const pageId = val.replace("nav:", "");
+        showPage(pageId);
+        const sel = document.getElementById("user-action-select");
+        if (sel) sel.value = "";
+        return;
+    }
+
+    // bestehende Aktionen
+    if (val === "changePw") goToChange();
+    if (val === "clear") {
+        confirmClearInputs();
+    }
+    if (val === "logout") logout();
+
+    // zurücksetzen, damit man die gleiche Aktion nochmal wählen kann
     const sel = document.getElementById("user-action-select");
     if (sel) sel.value = "";
-    return;
-  }
-
-  // bestehende Aktionen
-  if (val === "changePw") goToChange();
-  if (val === "clear") {
-  showConfirm("Alle Eingaben wirklich löschen?", () => {
-    clearInputs();
-  });
-}
-  if (val === "logout") logout();
-
-  // zurücksetzen, damit man die gleiche Aktion nochmal wählen kann
-  const sel = document.getElementById("user-action-select");
-  if (sel) sel.value = "";
 }
 window.handleUserAction = handleUserAction;
 
+function confirmClearInputs() {
+    showConfirm("Alle Eingaben und hochgeladenen Dateien wirklich löschen?", async () => {
+        await clearUploadedFilesFromStorage();
+        clearInputs();
+    });
+}
+
+window.confirmClearInputs = confirmClearInputs;
+
+function updateKpNavigation(pageId) {
+    document.querySelectorAll(".kp-nav-item").forEach(btn => {
+        btn.classList.remove("active", "parent-active");
+
+        const target = btn.dataset.page;
+        if (target === pageId) {
+            btn.classList.add("active");
+        }
+    });
+
+    document.querySelectorAll(".kp-subnav").forEach(group => {
+        group.classList.remove("open");
+    });
+
+    const sanierungPages = new Set(["page-6", "page-8", "page-10", "page-11"]);
+    const neubauPages = new Set(["page-7", "page-14-1", "page-14", "page-14-2", "page-14-3", "page-26", "page-29", "page-33"]);
+
+    if (sanierungPages.has(pageId)) {
+        document.querySelector('.kp-subnav[data-parent="sanierung"]')?.classList.add("open");
+
+        if (pageId !== "page-6") {
+            document.querySelector('.kp-nav-item[data-page="page-6"]')?.classList.add("parent-active");
+        }
+    }
+
+    if (neubauPages.has(pageId)) {
+        document.querySelector('.kp-subnav[data-parent="neubau"]')?.classList.add("open");
+
+        if (pageId !== "page-7") {
+            document.querySelector('.kp-nav-item[data-page="page-7"]')?.classList.add("parent-active");
+        }
+    }
+}
+
+const kpSummaryConfig = [
+    { key: "page8Data", label: "Frässystem", unit: "m²" },
+    { key: "page10Data", label: "3 mm Klett", unit: "m²" },
+    { key: "page11Data", label: "Trockenbau", unit: "m²" },
+    { key: "page14Data", label: "Tackersystem Handelsmarke", unit: "m²" },
+    { key: "page142Data", label: "Tackersystem Uponor", unit: "m²" },
+    { key: "page143Data", label: "Tackersystem Roth", unit: "m²" },
+    { key: "page26Data", label: "Klettsystem", unit: "m²" },
+    { key: "page29Data", label: "Noppensystem", unit: "m²" },
+    { key: "page33Data", label: "Industrieboden", unit: "m²" },
+    { key: "page9Data", label: "Estrich", unit: "m²" },
+    { key: "page18Data", label: "Unterdämmung", unit: "m²" },
+    { key: "page20Data", label: "Verteiler & Regeltechnik", unit: "Stück" },
+    { key: "page21Data", label: "Dienstleistungen", unit: "Einheit" },
+    { key: "page22Data", label: "Zuschläge", unit: "Einheit" }
+];
+
+function getKpTotalQty(storageKey) {
+    const data = JSON.parse(localStorage.getItem(storageKey) || "{}");
+
+    return Object.values(data).reduce((sum, value) => {
+        const n = parseFloat(String(value).replace(",", ".")) || 0;
+        return sum + n;
+    }, 0);
+}
+
+function updateKpSelectionSummary() {
+    const box = document.getElementById("kp-selection-summary");
+    if (!box) return;
+
+    let html = "";
+
+    kpSummaryConfig.forEach(item => {
+        const qty = getKpTotalQty(item.key);
+
+        if (qty > 0) {
+            html += `
+        <div class="kp-summary-item">
+          <span>${item.label}</span>
+          <strong>${qty.toLocaleString("de-DE")} ${item.unit}</strong>
+        </div>
+      `;
+        }
+    });
+
+    box.innerHTML = html || `<p class="kp-empty-summary">Noch keine Auswahl vorhanden.</p>`;
+}
 
 // -----------------------------
 // Firebase - E-Mail+Passwort
@@ -105,85 +193,116 @@ window.handleUserAction = handleUserAction;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
-  getAuth,
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
-  updatePassword,
-  signOut,
-  onAuthStateChanged,
-  setPersistence,
-  browserSessionPersistence
+    getAuth,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+    updatePassword,
+    signOut,
+    onAuthStateChanged,
+    setPersistence,
+    browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 import {
-  getFirestore,
-  addDoc,
-  collection,
-  serverTimestamp
+    getFirestore,
+    addDoc,
+    collection,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+import {
+    getFunctions,
+    httpsCallable
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-functions.js";
+
+import {
+    getStorage,
+    ref as storageRef,
+    uploadBytes,
+    uploadBytesResumable,
+    deleteObject
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBZqRmkbgeMDPUEKgowBKnXCzg0xPQnZVE",
-  authDomain: "pw-pj-ndf-f9d52.firebaseapp.com",
-  projectId: "pw-pj-ndf-f9d52",
-  storageBucket: "pw-pj-ndf-f9d52.firebasestorage.app",
-  messagingSenderId: "732616641079",
-  appId: "1:732616641079:web:60538312ca75b3f3e48db2",
-  measurementId: "G-0G2B43LSGX"
+    apiKey: "AIzaSyBZqRmkbgeMDPUEKgowBKnXCzg0xPQnZVE",
+    authDomain: "pw-pj-ndf-f9d52.firebaseapp.com",
+    projectId: "pw-pj-ndf-f9d52",
+    storageBucket: "pw-pj-ndf-f9d52.firebasestorage.app",
+    messagingSenderId: "732616641079",
+    appId: "1:732616641079:web:60538312ca75b3f3e48db2",
+    measurementId: "G-0G2B43LSGX"
 };
+
+const blazeConfig = {
+    apiKey: "AIzaSyCcHI5sGR7sFwrWRpo2uQ3Plm0HpTvqr30",
+    authDomain: "kalkpro-4cc29.firebaseapp.com",
+    projectId: "kalkpro-4cc29",
+    storageBucket: "kalkpro-4cc29.firebasestorage.app",
+    messagingSenderId: "185447466021",
+    appId: "1:185447466021:web:e0d0720fae971b4ab52bcc",
+    measurementId: "G-V4SF92V16K"
+};
+
+const blazeApp = initializeApp(blazeConfig, "blazeApp");
+const blazeFunctions = getFunctions(blazeApp, "europe-west1");
+const blazeStorage = getStorage(blazeApp);
+
+let uploadedFiles = JSON.parse(localStorage.getItem("uploadedFiles") || "[]");
+
+resetStoredInputsOnReload();
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 (async () => {
-  // 1) Persistenz: nichts im Browser behalten
-  await setPersistence(auth, browserSessionPersistence);
+    // 1) Persistenz: nichts im Browser behalten
+    await setPersistence(auth, browserSessionPersistence);
 
-  // 2) EINMALIGER Cleanup: falls noch eine alte Session (local) rumliegt, abmelden
-  // (nachdem du das einmal deployed hast, ist es danach dauerhaft sauber)
-  // await signOut(auth);
+    // 2) EINMALIGER Cleanup: falls noch eine alte Session (local) rumliegt, abmelden
+    // (nachdem du das einmal deployed hast, ist es danach dauerhaft sauber)
+    // await signOut(auth);
 
-  // 3) Listener erst DANACH
-  onAuthStateChanged(auth, user => {
-    currentUser = user || null;
-  const info = document.getElementById("login-info");
+    // 3) Listener erst DANACH
+    onAuthStateChanged(auth, user => {
+        currentUser = user || null;
+        const info = document.getElementById("login-info");
 
-  if (user) {
-     document.body.classList.add("is-logged-in");
-      
-    unlockAppUI();
-    if (info) info.innerText = "Angemeldet als: " + user.email;
-    updateAdminUI_();
+        if (user) {
+            document.body.classList.add("is-logged-in");
 
-    // Zielseite bestimmen: letzte Seite (aber nie login) – ansonsten Seite 3
-    const last = sessionStorage.getItem("lastPage");
-    const target = getInitialPage();
+            unlockAppUI();
+            if (info) info.innerText = "Angemeldet als: " + user.email;
+            updateAdminUI_();
 
-    startTimer();
-    showPage(target);
+            // Zielseite bestimmen: letzte Seite (aber nie login) – ansonsten Seite 3
+            const last = sessionStorage.getItem("lastPage");
+            const target = getInitialPage();
 
-  } else {
-        clearInterval(logoutTimer);
-    sessionStorage.removeItem(LOGOUT_DEADLINE_KEY);
-    document.body.classList.remove("is-logged-in");
-    lockAppUI();
-    if (info) info.innerText = "";
-    updateAdminUI_();
-    showPage("page-start", true);
-    startSplashScreen();
-  }
+            startTimer();
+            showPage(target);
 
-const actions = document.getElementById("user-actions");
+        } else {
+            clearInterval(logoutTimer);
+            sessionStorage.removeItem(LOGOUT_DEADLINE_KEY);
+            document.body.classList.remove("is-logged-in");
+            lockAppUI();
+            if (info) info.innerText = "";
+            updateAdminUI_();
+            showPage("page-start", true);
+            startSplashScreen();
+        }
 
-if (user) {
-  if (actions) actions.classList.remove("hidden");
-} else {
-  if (actions) actions.classList.add("hidden");
-}
+        const actions = document.getElementById("user-actions");
 
- // 🔥 ERST JETZT App sichtbar machen
-  const app = document.getElementById("app");
-if (app) app.classList.remove("hidden");
-});
+        if (user) {
+            if (actions) actions.classList.remove("hidden");
+        } else {
+            if (actions) actions.classList.add("hidden");
+        }
+
+        // 🔥 ERST JETZT App sichtbar machen
+        const app = document.getElementById("app");
+        if (app) app.classList.remove("hidden");
+    });
 })();
 
 const db = getFirestore(fbApp);
@@ -202,26 +321,41 @@ function updateAuthButtons() {
     const ok = isPrivacyAccepted();
 
     const btnLogin = document.getElementById("btnLogin");
-    
+
     // NICHT disabled setzen -> sonst kein Klick -> keine Fehlermeldung
     btnLogin?.classList.toggle("btn-disabled", !ok);
-    }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     const cb1 = document.getElementById("chkPrivacyAck");
     const cbDetail = document.getElementById("chkDetail");
     const besichtigung = document.getElementById("besichtigung");
 
+    if (besichtigung) {
+        besichtigung.addEventListener("change", () => {
+            savePage5Data?.();
+            syncBesichtigungToPage21();
+        });
+    }
+
+    const fileInput = document.getElementById("request-files");
+
     cb1?.addEventListener("change", updateAuthButtons);
 
     if (cb1) cb1.checked = false;
 
     if (cbDetail) {
-      cbDetail.checked = false;
-      cbDetail.addEventListener("change", updatePage5DetailUI);
-      // danach Dienstleistungs-Feld synchronisieren
+        cbDetail.checked = false;
+        cbDetail.addEventListener("change", updatePage5DetailUI);
+        // danach Dienstleistungs-Feld synchronisieren
         syncBesichtigungToPage21();
     }
+
+    if (fileInput) {
+        fileInput.addEventListener("change", handleFileUpload);
+    }
+
+    renderFileList();
 
     updateAuthButtons();
     updatePage5DetailUI();
@@ -230,11 +364,11 @@ document.addEventListener("DOMContentLoaded", () => {
         "besichtigung",
         "Hinweis: Für die Baustellenbesichtigung wird eine Beratungspauschale erhoben. Bei Auswahl 'ja' wird automatisch auf der Seite 'Dienstleistungen' die Menge 1 eingetragen."
     );
-    
- //   handlePage5Hinweis(
- //       "schnellauslegung",
- //       "Hinweis: Für die Schnellauslegung werden zusätzliche Projektunterlagen benötigt und es entstehen zusätzliche Kosten. Tragen Sie wenn möglich bei Dienstleistungen das Flächenmaß ein."
- //   );
+
+    //   handlePage5Hinweis(
+    //       "schnellauslegung",
+    //       "Hinweis: Für die Schnellauslegung werden zusätzliche Projektunterlagen benötigt und es entstehen zusätzliche Kosten. Tragen Sie wenn möglich bei Dienstleistungen das Flächenmaß ein."
+    //   );
 
     handlePage5Hinweis(
         "berechnung",
@@ -247,339 +381,336 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 });
 
-if (besichtigung) {
-    besichtigung.addEventListener("change", () => {
-        savePage5Data?.();
-        syncBesichtigungToPage21();
-    });
-}
 
-		// -----------------------------
-		// showPage
-		// -----------------------------
+// -----------------------------
+// showPage
+// -----------------------------
 
 async function showPage(id, fromHistory = false) {
 
-        // Ohne Login nur diese Seiten erlauben:
-  const publicPages = new Set(["page-login", "page-start", "page-change", "page-hinweis"]);
+    // Ohne Login nur diese Seiten erlauben:
+    const publicPages = new Set(["page-login", "page-start", "page-change", "page-hinweis"]);
 
-  if (!isLoggedIn() && !publicPages.has(id)) {
-    console.warn("Blocked navigation (not logged in):", id);
-    id = "page-login";
-  }
-
-  // letzte Seite merken (nur wenn eingeloggt und nicht login/start)
-  if (isLoggedIn()) {
-    sessionStorage.setItem("lastPage", id);
-  }
-
-// Browser-History nur setzen, wenn NICHT durch Zurück/Vor ausgelöst
-  if (!fromHistory) {
-    history.pushState({ page: id }, "", "#" + id);
-  }
-
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  const el = document.getElementById(id);
-  if (!el) return;           // Sicherheitsnetz
-  
-document.getElementById(id).classList.add("active");
-
-  if (id === "page-14") loadPage14();
-  if (id === "page-14-3") loadPage143();
-  if (id === "page-14-2") loadPage142();
-  if (id === "page-8") loadPage8();
-  if (id === "page-18") loadPage18();
-  if (id === "page-20") loadPage20();
-  if (id === "page-21") loadPage21();
-  if (id === "page-22") loadPage22();
-  if (id === "page-9") loadPage9();
-  if (id === "page-10") loadPage10();
-  if (id === "page-23") loadPage23();
-  if (id === "page-24") loadPage24();
-  if (id === "page-25") loadPage25();
-  if (id === "page-27") loadPage27();
-  if (id === "page-28") loadPage28();
-  if (id === "page-30") loadPage30();
-  if (id === "page-31") loadPage31();
-  if (id === "page-32") loadPage32();
-  if (id === "page-33") loadPage33();
-  if (id === "page-13") loadPage13();
-
-  if (id === "page-40") {
-    showLoader40(true);
-    try {
-      page40Promise = loadPage40();
-      await page40Promise;
-    } finally {
-      showLoader40(false);
+    if (!isLoggedIn() && !publicPages.has(id)) {
+        console.warn("Blocked navigation (not logged in):", id);
+        id = "page-login";
     }
-  }
-  // Checkboxen beim Seitenwechsel zurücksetzen
+
+    // letzte Seite merken (nur wenn eingeloggt und nicht login/start)
+    if (isLoggedIn()) {
+        sessionStorage.setItem("lastPage", id);
+    }
+
+    // Browser-History nur setzen, wenn NICHT durch Zurück/Vor ausgelöst
+    if (!fromHistory) {
+        history.pushState({ page: id }, "", "#" + id);
+    }
+
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    const el = document.getElementById(id);
+    if (!el) return;           // Sicherheitsnetz
+
+    document.getElementById(id).classList.add("active");
+
+    updateKpNavigation(id);
+    updateKpSelectionSummary();
+
+    if (id === "page-14") loadPage14();
+    if (id === "page-14-3") loadPage143();
+    if (id === "page-14-2") loadPage142();
+    if (id === "page-8") loadPage8();
+    if (id === "page-18") loadPage18();
+    if (id === "page-20") loadPage20();
+    if (id === "page-21") loadPage21();
+    if (id === "page-22") loadPage22();
+    if (id === "page-9") loadPage9();
+    if (id === "page-10") loadPage10();
+    if (id === "page-23") loadPage23();
+    if (id === "page-24") loadPage24();
+    if (id === "page-25") loadPage25();
+    if (id === "page-27") loadPage27();
+    if (id === "page-28") loadPage28();
+    if (id === "page-30") loadPage30();
+    if (id === "page-31") loadPage31();
+    if (id === "page-32") loadPage32();
+    if (id === "page-33") loadPage33();
+    if (id === "page-13") loadPage13();
+
+    if (id === "page-40") {
+        showLoader40(true);
+        try {
+            page40Promise = loadPage40();
+            await page40Promise;
+        } finally {
+            showLoader40(false);
+        }
+    }
+    // Checkboxen beim Seitenwechsel zurücksetzen
     const cb1 = document.getElementById("chkPrivacyAck");
-        if (cb1) cb1.checked = false;
-    
+    if (cb1) cb1.checked = false;
+
     updateAuthButtons();
 }
 
-		// -----------------------------
-		// LOGIN - LOGOUT - PASSWORD
-		// -----------------------------
+// -----------------------------
+// LOGIN - LOGOUT - PASSWORD
+// -----------------------------
 
 async function login() {
-  const email = loginUser.value.trim();
-  const pw = loginPass.value;
+    const email = loginUser.value.trim();
+    const pw = loginPass.value;
 
-  // 1) Erst Eingaben prüfen
-  if (!email || !pw) {
-    loginError.innerText = "Bitte E-Mail und Passwort eingeben.";
-    return;
-  }
+    // 1) Erst Eingaben prüfen
+    if (!email || !pw) {
+        loginError.innerText = "Bitte E-Mail und Passwort eingeben.";
+        return;
+    }
 
-// 2) Dann allgemeine Hinweise-Haken prüfen
+    // 2) Dann allgemeine Hinweise-Haken prüfen
     if (!isPrivacyAccepted()) {
         if (loginError) loginError.innerText =
             "Bitte bestätigen Sie die allgemeinen Hinweise (Haken setzen), um sich anzumelden.";
         return;
     }
 
-  try {
-    const cred = await signInWithEmailAndPassword(auth, email, pw);
-    currentUser = cred.user;
+    try {
+        const cred = await signInWithEmailAndPassword(auth, email, pw);
+        currentUser = cred.user;
 
-    // zentral loggen
-    await addDoc(collection(db, "loginLogs"), {
-      uid: currentUser.uid,
-      email: currentUser.email,
-      event: "LOGIN_SUCCESS",
-      time: serverTimestamp()
-    });
+        // zentral loggen
+        await addDoc(collection(db, "loginLogs"), {
+            uid: currentUser.uid,
+            email: currentUser.email,
+            event: "LOGIN_SUCCESS",
+            time: serverTimestamp()
+        });
 
-    updateAdminUI_();
-    startTimer();
-    showPage("page-3");
-  } catch (e) {
-    loginError.innerText = "Login fehlgeschlagen (E-Mail/Passwort prüfen).";
-  }
+        updateAdminUI_();
+        startTimer();
+        showPage("page-3");
+    } catch (e) {
+        loginError.innerText = "Login fehlgeschlagen (E-Mail/Passwort prüfen).";
+    }
 }
 
 async function logout() {
-  try {
-    await signOut(auth);
+    try {
+        await signOut(auth);
 
-    currentUser = null;
+        currentUser = null;
 
-    // Timer stoppen + Anzeige zurücksetzen
-    clearInterval(logoutTimer);
-    remaining = 600;
-    const t = document.getElementById("timer");
-    if (t) t.innerText = "Logout in: 10:00";
+        // Timer stoppen + Anzeige zurücksetzen
+        clearInterval(logoutTimer);
+        remaining = 600;
+        const t = document.getElementById("timer");
+        if (t) t.innerText = "Logout in: 10:00";
 
-    // Admin-Button ausblenden
-    updateAdminUI_();
+        // Admin-Button ausblenden
+        updateAdminUI_();
 
-    // optional: Login-Felder leeren
-    loginPass.value = "";
-    // loginUser.value = ""; // nur wenn du auch die Mail leeren willst
+        // optional: Login-Felder leeren
+        loginPass.value = "";
+        // loginUser.value = ""; // nur wenn du auch die Mail leeren willst
 
-    const info = document.getElementById("login-info");
-    if (info) info.innerText = "";
+        const info = document.getElementById("login-info");
+        if (info) info.innerText = "";
 
-    showPage("page-login");
-    loginError.innerText = "Erfolgreich abgemeldet.";
-  } catch (e) {
-    console.error(e);
-    alert("Abmelden fehlgeschlagen");
-  }
+        showPage("page-login");
+        loginError.innerText = "Erfolgreich abgemeldet.";
+    } catch (e) {
+        console.error(e);
+        alert("Abmelden fehlgeschlagen");
+    }
 }
 
 async function forgotPassword() {
-  const email = loginUser.value.trim();
-  if (!email) {
-    loginError.innerText = "Bitte E-Mail eingeben.";
-    return;
-  }
-  try {
-    await sendPasswordResetEmail(auth, email);
-    loginError.innerText = "Reset-Link wurde per E-Mail gesendet.";
-  } catch (e) {
-    loginError.innerText = "Reset-Mail konnte nicht gesendet werden.";
-  }
+    const email = loginUser.value.trim();
+    if (!email) {
+        loginError.innerText = "Bitte E-Mail eingeben.";
+        return;
+    }
+    try {
+        await sendPasswordResetEmail(auth, email);
+        loginError.innerText = "Reset-Link wurde per E-Mail gesendet.";
+    } catch (e) {
+        loginError.innerText = "Reset-Mail konnte nicht gesendet werden.";
+    }
 }
 
 function goToChange() {
-  if (!auth.currentUser) {
-    loginError.innerText = "Bitte erst anmelden.";
-    return;
-  }
-  showPage("page-change");
+    if (!auth.currentUser) {
+        loginError.innerText = "Bitte erst anmelden.";
+        return;
+    }
+    showPage("page-change");
 }
 
 async function savePassword() {
-  const n1 = newPass1.value;
-  const n2 = newPass2.value;
+    const n1 = newPass1.value;
+    const n2 = newPass2.value;
 
-  if (!n1 || !n2) {
-    changeError.innerText = "Bitte alle Felder ausfüllen.";
-    return;
-  }
-  if (n1 !== n2) {
-    changeError.innerText = "Neue Passwörter stimmen nicht überein.";
-    return;
-  }
-  if (!auth.currentUser) {
-    changeError.innerText = "Nicht eingeloggt.";
-    return;
-  }
+    if (!n1 || !n2) {
+        changeError.innerText = "Bitte alle Felder ausfüllen.";
+        return;
+    }
+    if (n1 !== n2) {
+        changeError.innerText = "Neue Passwörter stimmen nicht überein.";
+        return;
+    }
+    if (!auth.currentUser) {
+        changeError.innerText = "Nicht eingeloggt.";
+        return;
+    }
 
-  try {
-    await updatePassword(auth.currentUser, n1);
-    changeError.innerText = "";
-    alert("Passwort geändert.");
-    showPage("page-3");
-  } catch (e) {
-    changeError.innerText = "Passwort konnte nicht geändert werden (ggf. neu einloggen).";
-  }
+    try {
+        await updatePassword(auth.currentUser, n1);
+        changeError.innerText = "";
+        alert("Passwort geändert.");
+        showPage("page-3");
+    } catch (e) {
+        changeError.innerText = "Passwort konnte nicht geändert werden (ggf. neu einloggen).";
+    }
 }
 
 function logEvent(username, event) {
-  const log = JSON.parse(localStorage.getItem("loginLog") || "[]");
-  log.push({ time: new Date().toISOString(), user: username || "", event });
-  localStorage.setItem("loginLog", JSON.stringify(log));
+    const log = JSON.parse(localStorage.getItem("loginLog") || "[]");
+    log.push({ time: new Date().toISOString(), user: username || "", event });
+    localStorage.setItem("loginLog", JSON.stringify(log));
 }
 
 async function exportLoginLog() {
-  const adminEmail = "pascal.gasch@tpholding.de";
-  const userEmail = auth.currentUser?.email || "";
+    const adminEmail = "pascal.gasch@tpholding.de";
+    const userEmail = auth.currentUser?.email || "";
 
-  if (userEmail.toLowerCase() !== adminEmail.toLowerCase()) {
-    alert("Keine Berechtigung.");
-    return;
-  }
+    if (userEmail.toLowerCase() !== adminEmail.toLowerCase()) {
+        alert("Keine Berechtigung.");
+        return;
+    }
 
-  const { getDocs, query, orderBy } = await import(
-    "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"
-  );
+    const { getDocs, query, orderBy } = await import(
+        "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"
+    );
 
-  const q = query(collection(db, "loginLogs"), orderBy("time", "desc"));
-  const snap = await getDocs(q);
- 
-		// -----------------------------
-		// LOGBUCH - NUR FÜR ADMIN
-		// -----------------------------
+    const q = query(collection(db, "loginLogs"), orderBy("time", "desc"));
+    const snap = await getDocs(q);
 
- let csv = "time;email;event\n";
-  snap.forEach(d => {
-    const x = d.data();
-    const time = x.time?.toDate ? x.time.toDate().toISOString() : "";
-    csv += `${time};${x.email || ""};${x.event || ""}\n`;
-  });
+    // -----------------------------
+    // LOGBUCH - NUR FÜR ADMIN
+    // -----------------------------
 
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
+    let csv = "time;email;event\n";
+    snap.forEach(d => {
+        const x = d.data();
+        const time = x.time?.toDate ? x.time.toDate().toISOString() : "";
+        csv += `${time};${x.email || ""};${x.event || ""}\n`;
+    });
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "login-log.csv";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "login-log.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
 }
 
 function updateAdminUI_() {
-  const btn = document.getElementById("btnExportLog");
-  if (!btn) return;
+    const btn = document.getElementById("btnExportLog");
+    if (!btn) return;
 
-  const adminEmail = "pascal.gasch@tpholding.de"; // HIER deine Admin-Mail eintragen
-  const isAdmin = (auth.currentUser?.email || "").toLowerCase() === adminEmail.toLowerCase();
+    const adminEmail = "pascal.gasch@tpholding.de"; // HIER deine Admin-Mail eintragen
+    const isAdmin = (auth.currentUser?.email || "").toLowerCase() === adminEmail.toLowerCase();
 
-  btn.classList.toggle("hidden", !isAdmin);
+    btn.classList.toggle("hidden", !isAdmin);
 }
 
-		// -----------------------------
-		//  LOGOUT-TIMER
-		// -----------------------------
+// -----------------------------
+//  LOGOUT-TIMER
+// -----------------------------
 
 const LOGOUT_AFTER_MS = 10 * 60 * 1000;
 const LOGOUT_DEADLINE_KEY = "kpLogoutDeadline";
 
 function setLogoutDeadline() {
-  sessionStorage.setItem(LOGOUT_DEADLINE_KEY, String(Date.now() + LOGOUT_AFTER_MS));
+    sessionStorage.setItem(LOGOUT_DEADLINE_KEY, String(Date.now() + LOGOUT_AFTER_MS));
 }
 
 function getLogoutDeadline() {
-  return Number(sessionStorage.getItem(LOGOUT_DEADLINE_KEY) || 0);
+    return Number(sessionStorage.getItem(LOGOUT_DEADLINE_KEY) || 0);
 }
 
 async function autoLogoutNow() {
-  clearInterval(logoutTimer);
-  sessionStorage.removeItem(LOGOUT_DEADLINE_KEY);
+    clearInterval(logoutTimer);
+    sessionStorage.removeItem(LOGOUT_DEADLINE_KEY);
 
-  try {
-    await signOut(auth);
-  } catch (e) {
-    console.error("Auto-Logout Fehler:", e);
-  }
+    try {
+        await signOut(auth);
+    } catch (e) {
+        console.error("Auto-Logout Fehler:", e);
+    }
 
-  currentUser = null;
-  remaining = 600;
+    currentUser = null;
+    remaining = 600;
 
-  const t = document.getElementById("timer");
-  if (t) t.innerText = "Logout in: 10:00";
+    const t = document.getElementById("timer");
+    if (t) t.innerText = "Logout in: 10:00";
 
-  const info = document.getElementById("login-info");
-  if (info) info.innerText = "";
+    const info = document.getElementById("login-info");
+    if (info) info.innerText = "";
 
-  showPage("page-login");
-  const loginError = document.getElementById("loginError");
-  if (loginError) loginError.innerText = "Automatisch ausgeloggt wegen Inaktivität.";
+    showPage("page-login");
+    const loginError = document.getElementById("loginError");
+    if (loginError) loginError.innerText = "Automatisch ausgeloggt wegen Inaktivität.";
 }
 
 function checkLogoutTimer() {
-  const deadline = getLogoutDeadline();
+    const deadline = getLogoutDeadline();
 
-  if (!deadline) return;
+    if (!deadline) return;
 
-  const isUserKnown = !!auth.currentUser || !!currentUser;
-  if (!isUserKnown) return;
+    const isUserKnown = !!auth.currentUser || !!currentUser;
+    if (!isUserKnown) return;
 
-  const diff = deadline - Date.now();
+    const diff = deadline - Date.now();
 
-  if (diff <= 0) {
-    autoLogoutNow();
-    return;
-  }
+    if (diff <= 0) {
+        autoLogoutNow();
+        return;
+    }
 
-  const seconds = Math.ceil(diff / 1000);
-  remaining = seconds;
+    const seconds = Math.ceil(diff / 1000);
+    remaining = seconds;
 
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
 
-  const t = document.getElementById("timer");
-  if (t) t.innerText = `Logout in: ${m}:${s.toString().padStart(2, "0")}`;
+    const t = document.getElementById("timer");
+    if (t) t.innerText = `Logout in: ${m}:${s.toString().padStart(2, "0")}`;
 }
 
 function startTimer() {
-  clearInterval(logoutTimer);
-  setLogoutDeadline();
-  checkLogoutTimer();
+    clearInterval(logoutTimer);
+    setLogoutDeadline();
+    checkLogoutTimer();
 
-  logoutTimer = setInterval(checkLogoutTimer, 1000);
+    logoutTimer = setInterval(checkLogoutTimer, 1000);
 }
 
-		// -----------------------------
-		// Alle Zwischensummen aller Preis-Seiten speichern
-		// -----------------------------
+// -----------------------------
+// Alle Zwischensummen aller Preis-Seiten speichern
+// -----------------------------
 
 let angebotSummen = JSON.parse(localStorage.getItem("angebotSummen") || "{}");
 
 function saveSeitenSumme(seitenId, summe) {
-  angebotSummen[seitenId] = summe;
-  localStorage.setItem("angebotSummen", JSON.stringify(angebotSummen));
+    angebotSummen[seitenId] = summe;
+    localStorage.setItem("angebotSummen", JSON.stringify(angebotSummen));
 
-// NEU: Rabatt-Anzeigen automatisch nachziehen
-  refreshRabattDisplays();
+    // NEU: Rabatt-Anzeigen automatisch nachziehen
+    refreshRabattDisplays();
 }
 
 function getGesamtAngebotssumme() {
@@ -590,157 +721,157 @@ function getGesamtAngebotssumme() {
     return total;
 }
 
-		// -----------------------------
-		// SHK-Rabatt (15%)
-		// -----------------------------
+// -----------------------------
+// SHK-Rabatt (15%)
+// -----------------------------
 
 const SHK_RABATT = 0.15;
 
 function formatEuro(n) {
-  const x = Number(n) || 0;
-  return x.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
+    const x = Number(n) || 0;
+    return x.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 }
 
 function getRabattSumme(total) {
-  const t = Number(total) || 0;
-  return t * (1 - SHK_RABATT); // = 85%
+    const t = Number(total) || 0;
+    return t * (1 - SHK_RABATT); // = 85%
 }
 
 // Aktualisiert alle vorhandenen Rabatt-Zeilen (auf allen Seiten, die gerade gerendert sind)
 function refreshRabattDisplays() {
-  const total = getGesamtAngebotssumme();
-  const after = getRabattSumme(total);
+    const total = getGesamtAngebotssumme();
+    const after = getRabattSumme(total);
 
-// alle dynamischen Seiten (14, 8, 18, ...) -> wir hängen data-rabatt="angebot" dran
-  document.querySelectorAll('[data-rabatt="angebot"]').forEach(el => {
-    el.innerText = `Gesamtsumme abzgl. SHK-Rabatt (15%): ${formatEuro(after)}`;
-  });
+    // alle dynamischen Seiten (14, 8, 18, ...) -> wir hängen data-rabatt="angebot" dran
+    document.querySelectorAll('[data-rabatt="angebot"]').forEach(el => {
+        el.innerText = `Gesamtsumme abzgl. SHK-Rabatt (15%): ${formatEuro(after)}`;
+    });
 
-// Seite 40 (statisch in HTML)
-  const p40 = document.getElementById("angebotspreisRabatt");
-  if (p40) p40.innerText = `Gesamtpreis abzgl. SHK-Rabatt (15%): ${formatEuro(after)}`;
+    // Seite 40 (statisch in HTML)
+    const p40 = document.getElementById("angebotspreisRabatt");
+    if (p40) p40.innerText = `Gesamtpreis abzgl. SHK-Rabatt (15%): ${formatEuro(after)}`;
 }
 
-        // -----------------------------
-		// Funktionen zur Seite 5
-		// -----------------------------
+// -----------------------------
+// Funktionen zur Seite 5
+// -----------------------------
 
 function getPage5BasicIds() {
-  return [
-    "pj-contact",
-    "pj-email",
-    "pj-phone",
-    "pj-number",
-    "shk-name",
-    "shk-contact",
-    "shk-email",
-    "shk-phone",
-    "site-address",
-    "execution-date"
-  ];
+    return [
+        "pj-contact",
+        "pj-email",
+        "pj-phone",
+        "pj-number",
+        "shk-name",
+        "shk-contact",
+        "shk-email",
+        "shk-phone",
+        "site-address",
+        "execution-date"
+    ];
 }
 
 function getPage5DetailIds() {
-  return [
-    "offer-date",
-    "estrich",
-    "bodenbelag",
-    "systemmarke",
-    "system",
-    "rohrtyp1",
-    "rohrtyp2",
-    "dämmung",
-    "wärmeleitgruppe1",
-    "wärmeleitgruppe2",
-    "aufbauhöhe",
-    "unbeheizt",
-    "unbeheizte_Fläche",
-    "heizkreisverteiler",
-    "besichtigung",
-    "schnellauslegung",
-    "berechnung",
-    "heizlastberechnung",
-    "relevante_Details"
-  ];
+    return [
+        "offer-date",
+        "estrich",
+        "bodenbelag",
+        "systemmarke",
+        "system",
+        "rohrtyp1",
+        "rohrtyp2",
+        "dämmung",
+        "wärmeleitgruppe1",
+        "wärmeleitgruppe2",
+        "aufbauhöhe",
+        "unbeheizt",
+        "unbeheizte_Fläche",
+        "heizkreisverteiler",
+        "besichtigung",
+        "schnellauslegung",
+        "berechnung",
+        "heizlastberechnung",
+        "relevante_Details"
+    ];
 }
 
 function clearPage5DetailFields() {
-  getPage5DetailIds().forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
+    getPage5DetailIds().forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
 
-    if (el.tagName === "SELECT") {
-      el.selectedIndex = 0;
-    } else if (el.type === "checkbox") {
-      el.checked = false;
-    } else {
-      el.value = "";
-    }
-  });
+        if (el.tagName === "SELECT") {
+            el.selectedIndex = 0;
+        } else if (el.type === "checkbox") {
+            el.checked = false;
+        } else {
+            el.value = "";
+        }
+    });
 }
 
 function updatePage5DetailUI() {
-  const chk = document.getElementById("chkDetail");
-  const box = document.getElementById("page5-detail-fields");
-  const btn = document.getElementById("submitPage5Btn");
+    const chk = document.getElementById("chkDetail");
+    const box = document.getElementById("page5-detail-fields");
+    const btn = document.getElementById("submitPage5Btn");
 
-  const active = !!chk?.checked;
+    const active = !!chk?.checked;
 
-  if (box) box.classList.toggle("hidden", !active);
+    if (box) box.classList.toggle("hidden", !active);
 
-  if (btn) {
-    btn.innerText = active
-      ? "Eingabe und weiter zu den Dienstleistungen"
-      : "Eingabe und weiter zum Hauptmenü";
-  }
+    if (btn) {
+        btn.innerText = active
+            ? "Eingabe und weiter zu den Dienstleistungen"
+            : "Eingabe und weiter zum Hauptmenü";
+    }
 
-  if (!active) {
-    clearPage5DetailFields();
-    savePage5Data();
-  }
-  syncBesichtigungToPage21();
+    if (!active) {
+        clearPage5DetailFields();
+        savePage5Data();
+    }
+    syncBesichtigungToPage21();
 }
 
 function showHinweis(text) {
 
-  const modal = document.getElementById("hinweisModal");
-  const textBox = document.getElementById("hinweisText");
-  const okBtn = document.getElementById("hinweisOk");
-  const cancelBtn = document.getElementById("hinweisCancel");
+    const modal = document.getElementById("hinweisModal");
+    const textBox = document.getElementById("hinweisText");
+    const okBtn = document.getElementById("hinweisOk");
+    const cancelBtn = document.getElementById("hinweisCancel");
 
-  textBox.innerText = text;
+    textBox.innerText = text;
 
-  cancelBtn.style.display = "none";   // Abbrechen ausblenden
-  okBtn.onclick = closeHinweis;
+    cancelBtn.style.display = "none";   // Abbrechen ausblenden
+    okBtn.onclick = closeHinweis;
 
-  modal.style.display = "block";
+    modal.style.display = "block";
 }
 
 function closeHinweis() {
-  document.getElementById("hinweisModal").style.display = "none";
+    document.getElementById("hinweisModal").style.display = "none";
 }
 
 function showConfirm(text, onOk) {
 
-  const modal = document.getElementById("hinweisModal");
-  const textBox = document.getElementById("hinweisText");
-  const okBtn = document.getElementById("hinweisOk");
-  const cancelBtn = document.getElementById("hinweisCancel");
+    const modal = document.getElementById("hinweisModal");
+    const textBox = document.getElementById("hinweisText");
+    const okBtn = document.getElementById("hinweisOk");
+    const cancelBtn = document.getElementById("hinweisCancel");
 
-  textBox.innerText = text;
+    textBox.innerText = text;
 
-  cancelBtn.style.display = "inline-block"; // Abbrechen anzeigen
+    cancelBtn.style.display = "inline-block"; // Abbrechen anzeigen
 
-  okBtn.onclick = () => {
-    modal.style.display = "none";
-    if (typeof onOk === "function") onOk();
-  };
+    okBtn.onclick = () => {
+        modal.style.display = "none";
+        if (typeof onOk === "function") onOk();
+    };
 
-  cancelBtn.onclick = () => {
-    modal.style.display = "none";
-  };
+    cancelBtn.onclick = () => {
+        modal.style.display = "none";
+    };
 
-  modal.style.display = "block";
+    modal.style.display = "block";
 }
 
 window.showHinweis = showHinweis;
@@ -759,46 +890,46 @@ function handlePage5Hinweis(selectId, hinweisText) {
 }
 
 
-		// -----------------------------
-		// Funktion zur Prüfung der Pflichteingaben auf Seite 5 (Kopfdaten für Anfrage) + speichern
-		// -----------------------------
+// -----------------------------
+// Funktion zur Prüfung der Pflichteingaben auf Seite 5 (Kopfdaten für Anfrage) + speichern
+// -----------------------------
 
 function submitPage5() {
-       
+
     const detailAktiv = !!document.getElementById("chkDetail")?.checked;
 
     const fields = [
-        {id: "pj-contact", name: "Ansprechpartner bei PJ"},
-        {id: "pj-email", name: "Ansprechpartner E-Mail bei PJ"},
-        {id: "pj-phone", name: "Ansprechpartner Telefon-Nr. bei PJ"},
-        {id: "pj-number", name: "SHK - PJ-Kunden-Nr."},
-        {id: "shk-name", name: "SHK Name/Firma"},
-        {id: "shk-contact", name: "SHK Ansprechpartner"},
-        {id: "shk-email", name: "SHK E-Mail"},
-        {id: "shk-phone", name: "SHK Telefon-Nr."},
-        {id: "site-address", name: "Adresse Baustelle"},
-        {id: "execution-date", name: "Gewünschter Ausführungstermin"}
+        { id: "pj-contact", name: "Ansprechpartner bei PJ" },
+        { id: "pj-email", name: "Ansprechpartner E-Mail bei PJ" },
+        { id: "pj-phone", name: "Ansprechpartner Telefon-Nr. bei PJ" },
+        { id: "pj-number", name: "SHK - PJ-Kunden-Nr." },
+        { id: "shk-name", name: "SHK Name/Firma" },
+        { id: "shk-contact", name: "SHK Ansprechpartner" },
+        { id: "shk-email", name: "SHK E-Mail" },
+        { id: "shk-phone", name: "SHK Telefon-Nr." },
+        { id: "site-address", name: "Adresse Baustelle" },
+        { id: "execution-date", name: "Gewünschter Ausführungstermin" }
     ];
 
     if (detailAktiv) {
         fields.push(
-            {id: "offer-date", name: "Angebotsabgabe bis"},
-            {id: "estrich", name: "Estrich anbieten?"},
-            {id: "bodenbelag", name: "Bodenbelag anbieten?"},
-            {id: "systemmarke", name: "Systemmarke"},
-            {id: "system", name: "System"},
-            {id: "rohrtyp1", name: "Rohrtyp Kunststoffrohr"},
-            {id: "rohrtyp2", name: "Rohrtyp Metallrohr"},
-            {id: "dämmung", name: "Dämmung"},
-            {id: "wärmeleitgruppe1", name: "Wärmeleitgruppe (WLG) Unterdämmung:"},
-            {id: "wärmeleitgruppe2", name: "Wärmeleitgruppe (WLG) Systemdämmung:"},
-            {id: "aufbauhöhe", name: "Aufbauhöhe"},
-            {id: "unbeheizt", name: "Unbeheizte Fläche"},
-            {id: "heizkreisverteiler", name: "Heizkreisverteiler"},
-            {id: "besichtigung", name: "Baustellenbesichtigung"},
-            {id: "schnellauslegung", name: "Schnellauslegung"},
-            {id: "berechnung", name: "Heizflächenberechnung"},
-            {id: "heizlastberechnung", name: "Heizlastberechnung"}
+            { id: "offer-date", name: "Angebotsabgabe bis" },
+            { id: "estrich", name: "Estrich anbieten?" },
+            { id: "bodenbelag", name: "Bodenbelag anbieten?" },
+            { id: "systemmarke", name: "Systemmarke" },
+            { id: "system", name: "System" },
+            { id: "rohrtyp1", name: "Rohrtyp Kunststoffrohr" },
+            { id: "rohrtyp2", name: "Rohrtyp Metallrohr" },
+            { id: "dämmung", name: "Dämmung" },
+            { id: "wärmeleitgruppe1", name: "Wärmeleitgruppe (WLG) Unterdämmung:" },
+            { id: "wärmeleitgruppe2", name: "Wärmeleitgruppe (WLG) Systemdämmung:" },
+            { id: "aufbauhöhe", name: "Aufbauhöhe" },
+            { id: "unbeheizt", name: "Unbeheizte Fläche" },
+            { id: "heizkreisverteiler", name: "Heizkreisverteiler" },
+            { id: "besichtigung", name: "Baustellenbesichtigung" },
+            { id: "schnellauslegung", name: "Schnellauslegung" },
+            { id: "berechnung", name: "Heizflächenberechnung" },
+            { id: "heizlastberechnung", name: "Heizlastberechnung" }
         );
     }
 
@@ -826,10 +957,10 @@ function submitPage5() {
 
 function savePage5Data() {
     const ids = [
-        "pj-contact", "pj-email", "pj-phone", "pj-number", "shk-name", "shk-contact",
+        "pj-contact", "pj-email", "pj-phone", "cc-email", "pj-number", "shk-name", "shk-contact",
         "shk-email", "shk-phone", "site-address", "execution-date",
         "offer-date", "estrich", "bodenbelag", "systemmarke", "system",
-        "rohrtyp1", "rohrtyp2", "dämmung", "wärmeleitgruppe1", "wärmeleitgruppe2","aufbauhöhe",
+        "rohrtyp1", "rohrtyp2", "dämmung", "wärmeleitgruppe1", "wärmeleitgruppe2", "aufbauhöhe",
         "unbeheizt", "unbeheizte_Fläche", "heizkreisverteiler", "besichtigung",
         "schnellauslegung", "berechnung", "heizlastberechnung", "relevante_Details"
     ];
@@ -842,16 +973,160 @@ function savePage5Data() {
     localStorage.setItem("page5Data", JSON.stringify(obj));
 }
 
-		// -----------------------------
-		// SEITE 14 – Tackersystem Hausmarke (ndf1.csv)
-		// -----------------------------
+function getRequesterEmail() {
+    return (document.getElementById("shk-email")?.value || "").trim().toLowerCase();
+}
+
+function getRequesterKey() {
+    const mail = getRequesterEmail();
+    return (mail || "unknown").replace(/[^a-z0-9._-]/g, "_");
+}
+
+async function handleFileUpload(event) {
+    const files = Array.from(event.target.files);
+
+    const progressContainer = document.getElementById("upload-progress-container");
+    const progressBar = document.getElementById("upload-progress-bar");
+    const progressText = document.getElementById("upload-progress-text");
+
+    const currentTotal = getUploadedFilesTotalSize();
+    const newFilesTotal = files.reduce((sum, file) => sum + file.size, 0);
+    const maxTotalSize = 10 * 1024 * 1024;
+
+    if (currentTotal + newFilesTotal > maxTotalSize) {
+        showHinweis("Die maximale Gesamtgröße aller hochgeladenen Dateien beträgt 10 MB.");
+        event.target.value = "";
+        return;
+    }
+
+    for (const file of files) {
+        try {
+            const requesterKey = getRequesterKey();
+            const path = `requests/${requesterKey}/attachments/${Date.now()}_${file.name}`;
+            const fileRef = storageRef(blazeStorage, path);
+            const uploadTask = uploadBytesResumable(fileRef, file);
+
+            if (progressContainer) progressContainer.style.display = "block";
+
+            await new Promise((resolve, reject) => {
+                uploadTask.on(
+                    "state_changed",
+                    snapshot => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        if (progressBar) progressBar.style.width = progress + "%";
+                        if (progressText) progressText.innerText = Math.round(progress) + " %";
+                    },
+                    reject,
+                    () => {
+                        if (progressBar) progressBar.style.width = "100%";
+                        if (progressText) progressText.innerText = "Upload abgeschlossen";
+                        resolve();
+                    }
+                );
+            });
+
+            uploadedFiles.push({
+                name: file.name,
+                path,
+                size: file.size
+            });
+
+        } catch (err) {
+            console.error("Upload Fehler:", err);
+            showHinweis("Fehler beim Hochladen: " + file.name);
+        }
+    }
+
+    localStorage.setItem("uploadedFiles", JSON.stringify(uploadedFiles));
+    renderFileList();
+    event.target.value = "";
+
+    setTimeout(() => {
+        if (progressBar) progressBar.style.width = "0%";
+        if (progressText) progressText.innerText = "0%";
+        if (progressContainer) progressContainer.style.display = "none";
+    }, 1000);
+}
+
+function getUploadedFilesTotalSize() {
+    return uploadedFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+}
+
+function renderFileList() {
+    const container = document.getElementById("file-list");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    uploadedFiles.forEach((file, index) => {
+        const div = document.createElement("div");
+        div.className = "file-item";
+        div.innerHTML = `
+      <span class="file-name">${file.name}</span>
+      <button type="button" onclick="removeFile(${index})">Entfernen</button>
+    `;
+        container.appendChild(div);
+    });
+}
+
+async function removeFile(index) {
+    const file = uploadedFiles[index];
+
+    try {
+        const fileRef = storageRef(blazeStorage, file.path);
+        await deleteObject(fileRef);
+    } catch (err) {
+        console.warn("Datei konnte nicht gelöscht werden:", err);
+    }
+
+    uploadedFiles.splice(index, 1);
+    localStorage.setItem("uploadedFiles", JSON.stringify(uploadedFiles));
+    renderFileList();
+}
+
+async function clearUploadedFilesFromStorage() {
+    const files = JSON.parse(localStorage.getItem("uploadedFiles") || "[]");
+
+    for (const file of files) {
+        if (!file?.path) continue;
+
+        try {
+            const fileRef = storageRef(blazeStorage, file.path);
+            await deleteObject(fileRef);
+        } catch (err) {
+            console.warn("Datei konnte nicht aus Storage gelöscht werden:", file?.name, err);
+        }
+    }
+
+    localStorage.removeItem("uploadedFiles");
+
+    const fileInput = document.getElementById("request-files");
+    if (fileInput) fileInput.value = "";
+
+    uploadedFiles = [];
+    renderFileList();
+
+    const uploadedFilesSection = document.getElementById("uploaded-files-section");
+    const uploadedFilesSummary = document.getElementById("uploaded-files-summary");
+
+    if (uploadedFilesSummary) uploadedFilesSummary.innerHTML = "";
+    if (uploadedFilesSection) uploadedFilesSection.style.display = "none";
+}
+
+window.clearUploadedFilesFromStorage = clearUploadedFilesFromStorage;
+window.handleFileUpload = handleFileUpload;
+window.removeFile = removeFile;
+
+// -----------------------------
+// SEITE 14 – Tackersystem Hausmarke (ndf1.csv)
+// -----------------------------
 
 let page14Loaded = false;
 
 function loadPage14() {
 
     if (!isLoggedIn()) return;
-    
+
     if (page14Loaded) return; // nicht doppelt laden
     page14Loaded = true;
 
@@ -863,8 +1138,8 @@ function loadPage14() {
             const container = document.getElementById("page14-content");
 
             let html = "";
-let headerInserted = false;            
-let gespeicherteWerte = JSON.parse(localStorage.getItem("page14Data") || "{}");
+            let headerInserted = false;
+            let gespeicherteWerte = JSON.parse(localStorage.getItem("page14Data") || "{}");
 
             lines.forEach((line, index) => {
 
@@ -893,8 +1168,8 @@ let gespeicherteWerte = JSON.parse(localStorage.getItem("page14Data") || "{}");
 
                 if (preisVorhanden) {
 
-if (!headerInserted) {
-    html += `
+                    if (!headerInserted) {
+                        html += `
       <div class="row table-header">
         <div></div>
         <div>Beschreibung</div>
@@ -904,8 +1179,8 @@ if (!headerInserted) {
         <div style="text-align:right;">Positionsergebnis</div>
       </div>
     `;
-    headerInserted = true;
-  } 
+                        headerInserted = true;
+                    }
 
                     const preis = parseFloat(colD.replace(",", "."));
                     const gespeicherteMenge = gespeicherteWerte[index] || 0;
@@ -919,7 +1194,7 @@ if (!headerInserted) {
                                type="number" min="0" step="any"
                                value="${gespeicherteMenge}"
                                oninput="calcRowPage14(this,${preis},${index})">
-                        <div class="col-d">${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €</div>
+                        <div class="col-d">${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €</div>
                         <div class="col-e">0,00 €</div>
                     </div>`;
                 } else {
@@ -952,7 +1227,7 @@ function calcRowPage14(input, preisWert, index) {
     const wert = menge * preisWert;
 
     ergebnis.innerText =
-        wert.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        wert.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page14Data") || "{}");
@@ -970,10 +1245,10 @@ function berechneGesamt14() {
 
     document.querySelectorAll("#page-14 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -985,60 +1260,60 @@ function berechneGesamt14() {
     const gesamtDiv = document.getElementById("gesamtSumme14");
     if (gesamtDiv) {
         gesamtDiv.innerText =
-            "Gesamtsumme Angebot: " + getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            "Gesamtsumme Angebot: " + getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 14.3 – Tackersystem ROTH (ndf3.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 14.3 – Tackersystem ROTH (ndf3.csv)
+// -----------------------------
 
 function loadPage143() {
     if (!isLoggedIn()) return;
-   
-  const container = document.getElementById("content-14-3");
-  if (!container) return;
 
-  // Falls schon geladen → nicht nochmal laden
-  if (container.innerHTML.trim() !== "") return;
+    const container = document.getElementById("content-14-3");
+    if (!container) return;
 
-  fetch("ndf3.csv")
-    .then(response => response.text())
-    .then(data => {
+    // Falls schon geladen → nicht nochmal laden
+    if (container.innerHTML.trim() !== "") return;
 
-      const lines = data.split("\n").slice(1);
-      let html = "";
-let headerInserted = false;
+    fetch("ndf3.csv")
+        .then(response => response.text())
+        .then(data => {
 
-      lines.forEach((line, index) => {
-        if (!line.trim()) return;
+            const lines = data.split("\n").slice(1);
+            let html = "";
+            let headerInserted = false;
 
-        const cols = line.split(";");
-        const colA = cols[0]?.trim();
-        const colB = cols[1]?.trim();
-        const colC = cols[2]?.trim();
-        const colD = cols[3]?.trim();
+            lines.forEach((line, index) => {
+                if (!line.trim()) return;
 
-        // TITEL / UNTERTITEL / ZWISCHENTITEL
-        if (colA === "Titel") {
-          html += `<div class="title">${colB}</div>`;
-          return;
-        }
-        if (colA === "Untertitel") {
-          html += `<div class="subtitle">${colB}</div>`;
-          return;
-        }
-        if (colA === "Zwischentitel") {
-          html += `<div class="midtitle">${colB}</div>`;
-          return;
-        }
+                const cols = line.split(";");
+                const colA = cols[0]?.trim();
+                const colB = cols[1]?.trim();
+                const colC = cols[2]?.trim();
+                const colD = cols[3]?.trim();
 
-        const preisVorhanden = colD && !isNaN(parseFloat(colD.replace(",", ".")));
+                // TITEL / UNTERTITEL / ZWISCHENTITEL
+                if (colA === "Titel") {
+                    html += `<div class="title">${colB}</div>`;
+                    return;
+                }
+                if (colA === "Untertitel") {
+                    html += `<div class="subtitle">${colB}</div>`;
+                    return;
+                }
+                if (colA === "Zwischentitel") {
+                    html += `<div class="midtitle">${colB}</div>`;
+                    return;
+                }
 
-        if (preisVorhanden) {
+                const preisVorhanden = colD && !isNaN(parseFloat(colD.replace(",", ".")));
 
-if (!headerInserted) {
-    html += `
+                if (preisVorhanden) {
+
+                    if (!headerInserted) {
+                        html += `
       <div class="row table-header">
         <div></div>
         <div>Beschreibung</div>
@@ -1048,13 +1323,13 @@ if (!headerInserted) {
         <div style="text-align:right;">Positionsergebnis</div>
       </div>
     `;
-    headerInserted = true;
-  } 
+                        headerInserted = true;
+                    }
 
-          const preis = parseFloat(colD.replace(",", "."));
-          const savedValue = localStorage.getItem("page143Data" + index) || "0";
+                    const preis = parseFloat(colD.replace(",", "."));
+                    const savedValue = localStorage.getItem("page143Data" + index) || "0";
 
-          html += `<div class="row">
+                    html += `<div class="row">
                       <div class="col-a">${colA}</div>
                       <div class="col-b">${colB}</div>
                       <div class="col-c">${colC}</div>
@@ -1064,103 +1339,103 @@ if (!headerInserted) {
                              oninput="calcRow143(this, ${preis}, ${index})">
 
                       <div class="col-d">
-                        ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                        ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                       </div>
 
                       <div class="col-e">0,00 €</div>
                    </div>`;
-        } else {
+                } else {
 
-          html += `<div class="row no-price">
+                    html += `<div class="row no-price">
                       <div class="col-a">${colA}</div>
                       <div class="col-b" style="grid-column: 2 / 7;">${colB}</div>
                    </div>`;
-        }
-      });
+                }
+            });
 
-      html += `<div id="gesamtSumme143" class="gesamt">Gesamtsumme: 0,00 €</div>`;
-      html += `<div id="gesamtSumme143Rabatt" class="gesamt rabatt" data-rabatt="angebot">
+            html += `<div id="gesamtSumme143" class="gesamt">Gesamtsumme: 0,00 €</div>`;
+            html += `<div id="gesamtSumme143Rabatt" class="gesamt rabatt" data-rabatt="angebot">
           Gesamtsumme abzgl. SHK-Rabatt (15%): 0,00 €
          </div>`;
 
-     container.innerHTML = html;
+            container.innerHTML = html;
 
-      berechneGesamt143();
-    });
+            berechneGesamt143();
+        });
 }
 
 // Berechnung einzelner Zeilen
-	function calcRow143(input, preisWert, index) {
+function calcRow143(input, preisWert, index) {
 
-  	const row = input.parentElement;
-  	const ergebnis = row.querySelector(".col-e");
+    const row = input.parentElement;
+    const ergebnis = row.querySelector(".col-e");
 
-  	const menge = parseFloat(input.value.replace(",", ".")) || 0;
+    const menge = parseFloat(input.value.replace(",", ".")) || 0;
 
-  	const sum = menge * preisWert;
+    const sum = menge * preisWert;
 
-  	ergebnis.innerText =
-    	sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+    ergebnis.innerText =
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
- 	let gespeicherteWerte =
-    		JSON.parse(localStorage.getItem("page143Data") || "{}");
+    let gespeicherteWerte =
+        JSON.parse(localStorage.getItem("page143Data") || "{}");
 
-gespeicherteWerte[index] = menge;
+    gespeicherteWerte[index] = menge;
 
-localStorage.setItem("page143Data",
-    JSON.stringify(gespeicherteWerte));
+    localStorage.setItem("page143Data",
+        JSON.stringify(gespeicherteWerte));
 
-  berechneGesamt143();
+    berechneGesamt143();
 }
 
 // Berechnung Gesamtsumme
- 	function berechneGesamt143() {
+function berechneGesamt143() {
 
-  	let sum = 0;
+    let sum = 0;
 
-  	document.querySelectorAll("#page-14-3 .col-e").forEach(el => {
+    document.querySelectorAll("#page-14-3 .col-e").forEach(el => {
 
-    	const wert = parseFloat(
-      		el.innerText.replace("€","")
-                 .replace(/\./g,"")
-                 .replace(",",".")
-                 .trim()
-    	) || 0;
+        const wert = parseFloat(
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
+        ) || 0;
 
-    	sum += wert;
-  	});
+        sum += wert;
+    });
 
-// Zwischensumme für Seite 14.3 speichern
+    // Zwischensumme für Seite 14.3 speichern
     saveSeitenSumme("page-14-3", sum);
 
-// Gesamtsumme über alle Seiten
+    // Gesamtsumme über alle Seiten
     const gesamtDiv = document.getElementById("gesamtSumme143");
     if (gesamtDiv) {
         gesamtDiv.innerText =
-            "Gesamtsumme Angebot: " + getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            "Gesamtsumme Angebot: " + getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 40 – Ausgabeseite Kostenvoranschlag / Anfrage
-		// -----------------------------
+// -----------------------------
+// SEITE 40 – Ausgabeseite Kostenvoranschlag / Anfrage
+// -----------------------------
 
 function isPreisZeile(colD) {
-  if (!colD) return false;
-  const p = parseFloat(String(colD).replace(",", "."));
-  return !isNaN(p);
+    if (!colD) return false;
+    const p = parseFloat(String(colD).replace(",", "."));
+    return !isNaN(p);
 }
 
 function renderHinweisLine(colA, colB) {
-  const text = (colB || "").trim();
-  if (!text) return "";
+    const text = (colB || "").trim();
+    if (!text) return "";
 
-  if (colA === "Titel") return `<div class="title">${text}</div>`;
-  if (colA === "Untertitel") return `<div class="subtitle">${text}</div>`;
-  if (colA === "Zwischentitel") return `<div class="midtitle">${text}</div>`;
+    if (colA === "Titel") return `<div class="title">${text}</div>`;
+    if (colA === "Untertitel") return `<div class="subtitle">${text}</div>`;
+    if (colA === "Zwischentitel") return `<div class="midtitle">${text}</div>`;
 
-  // “Beschreibungstext”-Zeilen (no-price)
-  return `<div class="hinweis-row">${text}</div>`;
+    // “Beschreibungstext”-Zeilen (no-price)
+    return `<div class="hinweis-row">${text}</div>`;
 }
 
 /**
@@ -1169,142 +1444,142 @@ function renderHinweisLine(colA, colB) {
  * mindestens eine Artikelposition Menge > 0 hat.
  */
 function extractTriggeredTextBlocks(lines, dataObj) {
-  const out = [];
+    const out = [];
 
-  let pendingHeaderParts = [];      // sammelt Textzeilen bis zur ersten Preiszeile (oder bis zum nächsten Block)
-  let sectionHeaderHtml = "";       // “Header” für die aktuelle Preis-Sektion
-  let inSection = false;
-  let sectionHasQty = false;
+    let pendingHeaderParts = [];      // sammelt Textzeilen bis zur ersten Preiszeile (oder bis zum nächsten Block)
+    let sectionHeaderHtml = "";       // “Header” für die aktuelle Preis-Sektion
+    let inSection = false;
+    let sectionHasQty = false;
 
-  function flushSectionIfNeeded() {
-    if (inSection && sectionHasQty && sectionHeaderHtml.trim()) {
-      out.push(sectionHeaderHtml);
-    }
-  }
-
-  for (let index = 0; index < lines.length; index++) {
-    const line = lines[index];
-    if (!line || !line.trim()) continue;
-
-    const cols = line.split(";");
-    const colA = (cols[0] || "").trim();
-    const colB = (cols[1] || "").trim();
-    const colD = (cols[3] || "").trim();
-
-    const istTitelZeile = (colA === "Titel" || colA === "Untertitel" || colA === "Zwischentitel");
-    const preisVorhanden = isPreisZeile(colD);
-
-    // TEXT-ZEILE (Titel/Untertitel/Zwischentitel oder "no-price"-Beschreibung)
-    if (istTitelZeile || !preisVorhanden) {
-      // Wenn wir gerade in einer Preis-Sektion waren und jetzt ein neuer Textblock beginnt:
-      if (inSection) {
-        flushSectionIfNeeded();
-        inSection = false;
-        sectionHasQty = false;
-        sectionHeaderHtml = "";
-        pendingHeaderParts = [];
-      }
-
-      const html = renderHinweisLine(colA, colB);
-      if (html) pendingHeaderParts.push(html);
-      continue;
+    function flushSectionIfNeeded() {
+        if (inSection && sectionHasQty && sectionHeaderHtml.trim()) {
+            out.push(sectionHeaderHtml);
+        }
     }
 
-    // PREIS-ZEILE
-    const menge = parseFloat((dataObj[index] ?? 0)) || 0;
+    for (let index = 0; index < lines.length; index++) {
+        const line = lines[index];
+        if (!line || !line.trim()) continue;
 
-    // Start einer neuen Preis-Sektion: der bis dahin gesammelte Textblock ist der “Header”
-    if (!inSection) {
-      inSection = true;
-      sectionHasQty = false;
-      sectionHeaderHtml = pendingHeaderParts.join("");
-      pendingHeaderParts = [];
+        const cols = line.split(";");
+        const colA = (cols[0] || "").trim();
+        const colB = (cols[1] || "").trim();
+        const colD = (cols[3] || "").trim();
+
+        const istTitelZeile = (colA === "Titel" || colA === "Untertitel" || colA === "Zwischentitel");
+        const preisVorhanden = isPreisZeile(colD);
+
+        // TEXT-ZEILE (Titel/Untertitel/Zwischentitel oder "no-price"-Beschreibung)
+        if (istTitelZeile || !preisVorhanden) {
+            // Wenn wir gerade in einer Preis-Sektion waren und jetzt ein neuer Textblock beginnt:
+            if (inSection) {
+                flushSectionIfNeeded();
+                inSection = false;
+                sectionHasQty = false;
+                sectionHeaderHtml = "";
+                pendingHeaderParts = [];
+            }
+
+            const html = renderHinweisLine(colA, colB);
+            if (html) pendingHeaderParts.push(html);
+            continue;
+        }
+
+        // PREIS-ZEILE
+        const menge = parseFloat((dataObj[index] ?? 0)) || 0;
+
+        // Start einer neuen Preis-Sektion: der bis dahin gesammelte Textblock ist der “Header”
+        if (!inSection) {
+            inSection = true;
+            sectionHasQty = false;
+            sectionHeaderHtml = pendingHeaderParts.join("");
+            pendingHeaderParts = [];
+        }
+
+        if (menge > 0) sectionHasQty = true;
     }
 
-    if (menge > 0) sectionHasQty = true;
-  }
+    // Letzte Sektion am Ende flushen
+    flushSectionIfNeeded();
 
-  // Letzte Sektion am Ende flushen
-  flushSectionIfNeeded();
-
-  return out.join("");
+    return out.join("");
 }
 
 
 async function loadPage40() {
     if (!isLoggedIn()) return;
-   
+
     const angebotTyp = localStorage.getItem("angebotTyp") || "kv";
     const titleEl = document.getElementById("page40-title");
     if (titleEl) {
         titleEl.innerText = (angebotTyp === "anfrage") ? "Anfrage" : "Kostenvoranschlag";
     }
 
-// Anfrage-Daten anzeigen (nur wenn angebotTyp === "anfrage")
-	const anfrageBox = document.getElementById("anfrage-daten");
-	const anfrageContent = document.getElementById("anfrage-daten-content");
+    // Anfrage-Daten anzeigen (nur wenn angebotTyp === "anfrage")
+    const anfrageBox = document.getElementById("anfrage-daten");
+    const anfrageContent = document.getElementById("anfrage-daten-content");
 
-	if (angebotTyp === "anfrage") {
-    		const p5 = JSON.parse(localStorage.getItem("page5Data") || "{}");
+    if (angebotTyp === "anfrage") {
+        const p5 = JSON.parse(localStorage.getItem("page5Data") || "{}");
 
-    const labels = {
-        "pj-contact": "Ansprechpartner bei PJ",
-        "pj-email": "Ansprechpartner E-Mail bei PJ",
-        "pj-phone": "Ansprechpartner Telefon-Nr. bei PJ",
-        "pj-number": "SHK - PJ-Kunden-Nr.",
-        "shk-name": "SHK Name/Firma",
-        "shk-contact": "SHK Ansprechpartner",
-        "shk-email": "SHK E-Mail",
-        "shk-phone": "SHK Telefon-Nr.",
-        "site-address": "Adresse Baustelle",
-        "execution-date": "Gewünschter Ausführungstermin",
-        "offer-date": "Angebotsabgabe bis",
-        "estrich": "Estrich anbieten?",
-        "bodenbelag": "Bodenbelag anbieten?",
-        "systemmarke": "Systemmarke",
-        "system": "System",
-        "rohrtyp1": "Rohrtyp Kunststoffrohr",
-        "rohrtyp2": "Rohrtyp Metallrohr",
-        "dämmung": "Dämmung",
-        "wärmeleitgruppe1": "Wärmeleitgruppe (WLG) Unterdämmung",
-        "wärmeleitgruppe2": "Wärmeleitgruppe (WLG) Systemdämmung",
-        "aufbauhöhe": "Aufbauhöhe",
-        "unbeheizt": "Unbeheizte Fläche",
-        "unbeheizte_Fläche": "Wo / m² unbeheizte Fläche",
-        "heizkreisverteiler": "Heizkreisverteiler",
-        "besichtigung": "Baustellenbesichtigung",
-        "schnellauslegung": "Schnellauslegung",
-        "berechnung": "Heizflächenberechnung",
-        "heizlastberechnung": "Heizlastberechnung",
-        "relevante_Details": "Relevante Details"
-    };
+        const labels = {
+            "pj-contact": "Ansprechpartner bei PJ",
+            "pj-email": "Ansprechpartner E-Mail bei PJ",
+            "pj-phone": "Ansprechpartner Telefon-Nr. bei PJ",
+            "pj-number": "SHK - PJ-Kunden-Nr.",
+            "shk-name": "SHK Name/Firma",
+            "shk-contact": "SHK Ansprechpartner",
+            "shk-email": "SHK E-Mail",
+            "shk-phone": "SHK Telefon-Nr.",
+            "site-address": "Adresse Baustelle",
+            "execution-date": "Gewünschter Ausführungstermin",
+            "offer-date": "Angebotsabgabe bis",
+            "estrich": "Estrich anbieten?",
+            "bodenbelag": "Bodenbelag anbieten?",
+            "systemmarke": "Systemmarke",
+            "system": "System",
+            "rohrtyp1": "Rohrtyp Kunststoffrohr",
+            "rohrtyp2": "Rohrtyp Metallrohr",
+            "dämmung": "Dämmung",
+            "wärmeleitgruppe1": "Wärmeleitgruppe (WLG) Unterdämmung",
+            "wärmeleitgruppe2": "Wärmeleitgruppe (WLG) Systemdämmung",
+            "aufbauhöhe": "Aufbauhöhe",
+            "unbeheizt": "Unbeheizte Fläche",
+            "unbeheizte_Fläche": "Wo / m² unbeheizte Fläche",
+            "heizkreisverteiler": "Heizkreisverteiler",
+            "besichtigung": "Baustellenbesichtigung",
+            "schnellauslegung": "Schnellauslegung",
+            "berechnung": "Heizflächenberechnung",
+            "heizlastberechnung": "Heizlastberechnung",
+            "relevante_Details": "Relevante Details"
+        };
 
-    let html = "";
-    Object.keys(labels).forEach(id => {
-        const val = (p5[id] || "").trim();
-        if (val) {
-            html += `<div style="margin:6px 0;"><strong>${labels[id]}:</strong> ${val}</div>`;
+        let html = "";
+        Object.keys(labels).forEach(id => {
+            const val = (p5[id] || "").trim();
+            if (val) {
+                html += `<div style="margin:6px 0;"><strong>${labels[id]}:</strong> ${val}</div>`;
+            }
+        });
+
+        if (anfrageBox && anfrageContent) {
+            anfrageContent.innerHTML = html || "<div>Keine Anfrage-Daten vorhanden.</div>";
+            anfrageBox.style.display = "block";
         }
-    });
-
-    if (anfrageBox && anfrageContent) {
-        anfrageContent.innerHTML = html || "<div>Keine Anfrage-Daten vorhanden.</div>";
-        anfrageBox.style.display = "block";
+    } else {
+        if (anfrageBox) anfrageBox.style.display = "none";
     }
-} else {
-    if (anfrageBox) anfrageBox.style.display = "none";
-}
 
     const container = document.getElementById("summary-content");
-const seitenHinweiseContainer = document.getElementById("seitenhinweise-content");
-const hinweiseContainer = document.getElementById("hinweise-content");
-if (!container || !hinweiseContainer || !seitenHinweiseContainer) return;
+    const seitenHinweiseContainer = document.getElementById("seitenhinweise-content");
+    const hinweiseContainer = document.getElementById("hinweise-content");
+    if (!container || !hinweiseContainer || !seitenHinweiseContainer) return;
 
-container.innerHTML = "";
-seitenHinweiseContainer.innerHTML = "";
-hinweiseContainer.innerHTML = "";
+    container.innerHTML = "";
+    seitenHinweiseContainer.innerHTML = "";
+    hinweiseContainer.innerHTML = "";
 
-container.innerHTML += `
+    container.innerHTML += `
   <div class="row table-header">
     <div>EDV-Nr.</div>
     <div>Beschreibung</div>
@@ -1318,7 +1593,7 @@ container.innerHTML += `
     let gesamt = 0;
 
     const seitenConfig = [
-        { key: "page14Data",  csv: "ndf1.csv" },
+        { key: "page14Data", csv: "ndf1.csv" },
         { key: "page142Data", csv: "ndf5.csv" },
         { key: "page8Data", csv: "ndf6.csv" },
         { key: "page18Data", csv: "ndf7.csv" },
@@ -1340,8 +1615,8 @@ container.innerHTML += `
         { key: "page143Data", csv: "ndf3.csv" }
     ];
 
-let seitenHinweiseHtml = "";
-let firstHinweisBlock = true;
+    let seitenHinweiseHtml = "";
+    let firstHinweisBlock = true;
 
     for (const seite of seitenConfig) {
 
@@ -1351,13 +1626,13 @@ let firstHinweisBlock = true;
         const csvText = await response.text();
         const lines = csvText.split("\n").slice(1);
 
-// 1) Seitenbezogene Textblöcke (nur wenn auf dieser Seite Mengen > 0 in der jeweiligen Sektion)
-const blocksHtml = extractTriggeredTextBlocks(lines, data);
-if (blocksHtml.trim()) {
-  if (!firstHinweisBlock) seitenHinweiseHtml += `<hr class="seitenhinweis-sep">`;
-  firstHinweisBlock = false;
-  seitenHinweiseHtml += blocksHtml;
-}
+        // 1) Seitenbezogene Textblöcke (nur wenn auf dieser Seite Mengen > 0 in der jeweiligen Sektion)
+        const blocksHtml = extractTriggeredTextBlocks(lines, data);
+        if (blocksHtml.trim()) {
+            if (!firstHinweisBlock) seitenHinweiseHtml += `<hr class="seitenhinweis-sep">`;
+            firstHinweisBlock = false;
+            seitenHinweiseHtml += blocksHtml;
+        }
 
         lines.forEach((line, index) => {
 
@@ -1386,32 +1661,32 @@ if (blocksHtml.trim()) {
                     <div class="col-b">${colB}</div>
                     <div class="col-c">${colC}</div>
                     <div class="col-d">${menge.toLocaleString("de-DE", { minimumFractionDigits: 0 })}</div>
-                    <div class="col-e">${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €</div>
-                    <div class="col-f">${(menge * preis).toLocaleString("de-DE",{minimumFractionDigits:2})} €</div>
+                    <div class="col-e">${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €</div>
+                    <div class="col-f">${(menge * preis).toLocaleString("de-DE", { minimumFractionDigits: 2 })} €</div>
                 `;
 
                 container.appendChild(zeile);
                 gesamt += menge * preis;
             }
-seitenHinweiseContainer.innerHTML = seitenHinweiseHtml;
+            seitenHinweiseContainer.innerHTML = seitenHinweiseHtml;
         });
     }
 
-// Hinweise Frässystem
-	const fraesenHinweis = document.getElementById("fraesen-hinweis-print");
-	if (fraesenHinweis) {
- 	 fraesenHinweis.style.display = fraesenVerwendet ? "block" : "none";
-	}
+    // Hinweise Frässystem
+    const fraesenHinweis = document.getElementById("fraesen-hinweis-print");
+    if (fraesenHinweis) {
+        fraesenHinweis.style.display = fraesenVerwendet ? "block" : "none";
+    }
 
     const angebotspreisEl = document.getElementById("angebotspreis");
     if (angebotspreisEl) {
         angebotspreisEl.innerText =
-            "Gesamtpreis: " + gesamt.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            "Gesamtpreis: " + gesamt.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 
-refreshRabattDisplays();
+    refreshRabattDisplays();
 
-// Hinweise laden (ndf4.csv)
+    // Hinweise laden (ndf4.csv)
     try {
         const hinweisRes = await fetch("ndf4.csv");
         const hinweisText = await hinweisRes.text();
@@ -1438,16 +1713,16 @@ refreshRabattDisplays();
     }
 }
 
-		// -----------------------------
-		// direktZumAngebot (Button)
-		// -----------------------------
+// -----------------------------
+// direktZumAngebot (Button)
+// -----------------------------
 
 function direktZumAngebot() {
 
     const ids = [
         "pj-contact", "pj-email", "pj-phone", "pj-number", "shk-name", "shk-contact",
         "shk-email", "shk-phone", "site-address", "execution-date", "offer-date", "estrich", "bodenbelag",
-        "systemmarke", "system", "rohrtyp1", "rohrtyp2", "dämmung", "wärmeleitgruppe1", "wärmeleitgruppe2","aufbauhöhe", "unbeheizt",
+        "systemmarke", "system", "rohrtyp1", "rohrtyp2", "dämmung", "wärmeleitgruppe1", "wärmeleitgruppe2", "aufbauhöhe", "unbeheizt",
         "heizkreisverteiler", "besichtigung", "schnellauslegung", "berechnung", "heizlastberechnung"
     ];
 
@@ -1466,17 +1741,17 @@ function direktZumAngebot() {
     }
 }
 
-		// -----------------------------
-		// SEITE 40 – printPage - (Button "Drucken / als PDF speichern")
-		// -----------------------------
+// -----------------------------
+// SEITE 40 – printPage - (Button "Drucken / als PDF speichern")
+// -----------------------------
 
 function printPage40() {
-  window.print();
+    window.print();
 }
 
-		// -----------------------------
-		// SEITE 40 – sendMail - (Button "Als Text-Mail versenden")
-		// -----------------------------
+// -----------------------------
+// SEITE 40 – sendMail - (Button "Als Text-Mail versenden")
+// -----------------------------
 
 function sendMailPage40() {
     if (!isLoggedIn()) return;
@@ -1500,86 +1775,86 @@ function sendMailPage40() {
         `mailto:${mailAdresse}?subject=${encodeURIComponent(subject)}&body=${body}`;
 }
 
-		// -----------------------------
-		// SEITE 40 – Export als CSV - (Button "Export CsV")
-		// -----------------------------
+// -----------------------------
+// SEITE 40 – Export als CSV - (Button "Export CsV")
+// -----------------------------
 
 function exportCsvPage40() {
     if (!isLoggedIn()) return;
-  const rows = document.querySelectorAll("#summary-content .summary-row");
-  if (!rows.length) {
-    alert("Keine Tabelleninhalte zum Export vorhanden.");
-    return;
-  }
+    const rows = document.querySelectorAll("#summary-content .summary-row");
+    if (!rows.length) {
+        alert("Keine Tabelleninhalte zum Export vorhanden.");
+        return;
+    }
 
-  const SEP = "-"; // Vorgabe
+    const SEP = "-"; // Vorgabe
 
-  // Excel-Hinweiszeile, damit es sicher in Spalten trennt (auch bei "-")
-  const lines = [];
-  lines.push(`sep=${SEP}`);
+    // Excel-Hinweiszeile, damit es sicher in Spalten trennt (auch bei "-")
+    const lines = [];
+    lines.push(`sep=${SEP}`);
 
-  // Kopfzeile
-  lines.push(["Artikelnummer", "Menge"].join(SEP));
+    // Kopfzeile
+    lines.push(["Artikelnummer", "Menge"].join(SEP));
 
-  // Werte "CSV-sicher" machen (ohne Anführungszeichen)
-  function clean(val) {
-    return String(val ?? "")
-      .trim()
-      .replace(/\r?\n/g, " "); // keine Zeilenumbrüche in Zellen
-  }
+    // Werte "CSV-sicher" machen (ohne Anführungszeichen)
+    function clean(val) {
+        return String(val ?? "")
+            .trim()
+            .replace(/\r?\n/g, " "); // keine Zeilenumbrüche in Zellen
+    }
 
-  rows.forEach(r => {
-    const artikel = clean(r.querySelector(".col-a")?.innerText);
-    const menge   = clean(r.querySelector(".col-d")?.innerText);
+    rows.forEach(r => {
+        const artikel = clean(r.querySelector(".col-a")?.innerText);
+        const menge = clean(r.querySelector(".col-d")?.innerText);
 
-    lines.push([artikel, menge].join(SEP));
-  });
+        lines.push([artikel, menge].join(SEP));
+    });
 
-  const csv = lines.join("\n");
+    const csv = lines.join("\n");
 
-  const datum = new Date().toLocaleDateString("de-DE").replaceAll(".", "-");
-  const filename = `PJ_KalkPro_CSV-Export_${datum}.csv`;
+    const datum = new Date().toLocaleDateString("de-DE").replaceAll(".", "-");
+    const filename = `PJ_KalkPro_CSV-Export_${datum}.csv`;
 
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
 
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 window.exportCsvPage40 = exportCsvPage40;
 
-		// -----------------------------
-		// clearInputs - Button "Eingaben löschen"
-		// -----------------------------
+// -----------------------------
+// clearInputs - Button "Eingaben löschen"
+// -----------------------------
 
 function clearInputs() {
 
-// localStorage komplett löschen
+    // localStorage komplett löschen
     localStorage.clear();
 
-fraesenVerwendet = false;
-fraesenHinweisGezeigt = false;
+    fraesenVerwendet = false;
+    fraesenHinweisGezeigt = false;
 
-// Eingabefelder im DOM leeren
+    // Eingabefelder im DOM leeren
     document.querySelectorAll("input").forEach(inp => inp.value = "");
 
-const chkDetail = document.getElementById("chkDetail");
-if (chkDetail) chkDetail.checked = false;
+    const chkDetail = document.getElementById("chkDetail");
+    if (chkDetail) chkDetail.checked = false;
 
-clearPage5DetailFields();
-updatePage5DetailUI();
+    clearPage5DetailFields();
+    updatePage5DetailUI();
 
-const page5Error = document.getElementById("page5-error");
-if (page5Error) page5Error.innerText = "";
+    const page5Error = document.getElementById("page5-error");
+    if (page5Error) page5Error.innerText = "";
 
-// Dynamische Inhalte leeren (damit nichts „stehen bleibt“)
+    // Dynamische Inhalte leeren (damit nichts „stehen bleibt“)
     const idsToClear = [
         "page14-content",
         "content-14-3",
@@ -1589,15 +1864,15 @@ if (page5Error) page5Error.innerText = "";
         "content-20",
         "content-21",
         "content-22",
-	    "content-9",
+        "content-9",
         "content-10",
         "content-23",
-	    "content-24",
+        "content-24",
         "content-25",
         "content-27",
         "content-28",
         "content-30",
-	    "content-31",
+        "content-31",
         "content-32",
         "content-33",
         "content-13",
@@ -1609,18 +1884,18 @@ if (page5Error) page5Error.innerText = "";
         const el = document.getElementById(id);
         if (el) el.innerHTML = "";
 
-document.querySelectorAll("select").forEach(sel => sel.selectedIndex = 0);
+        document.querySelectorAll("select").forEach(sel => sel.selectedIndex = 0);
 
-const chkDetail = document.getElementById("chkDetail");
-if (chkDetail) chkDetail.checked = false;
+        const chkDetail = document.getElementById("chkDetail");
+        if (chkDetail) chkDetail.checked = false;
 
-if (typeof updatePage5DetailUI === "function") {
-    updatePage5DetailUI();
-}
+        if (typeof updatePage5DetailUI === "function") {
+            updatePage5DetailUI();
+        }
 
     });
 
-// Summen-Anzeige zurücksetzen
+    // Summen-Anzeige zurücksetzen
     const angebotspreis = document.getElementById("angebotspreis");
     if (angebotspreis) angebotspreis.innerText = "Gesamtsumme: 0,00 €";
 
@@ -1684,34 +1959,34 @@ if (typeof updatePage5DetailUI === "function") {
     const sum13 = document.getElementById("gesamtSumme13");
     if (sum13) sum13.innerText = "Gesamtsumme Angebot: 0,00 €";
 
-// Flags zurücksetzen, damit Seiten neu aus CSV geladen werden
+    // Flags zurücksetzen, damit Seiten neu aus CSV geladen werden
     page14Loaded = false;
 
-// Seite 14.3 hat kein Flag, daher reicht Container leeren
+    // Seite 14.3 hat kein Flag, daher reicht Container leeren
 
-// Angebots-Summen Objekt zurücksetzen (falls du es im RAM nutzt)
+    // Angebots-Summen Objekt zurücksetzen (falls du es im RAM nutzt)
     angebotSummen = {};
 
     updateAdminUI_();
 
-document.querySelectorAll('[data-rabatt="angebot"]').forEach(el => {
-  el.innerText = "Gesamtsumme abzgl. SHK-Rabatt (15%): 0,00 €";
-});
+    document.querySelectorAll('[data-rabatt="angebot"]').forEach(el => {
+        el.innerText = "Gesamtsumme abzgl. SHK-Rabatt (15%): 0,00 €";
+    });
 
-const p40r = document.getElementById("angebotspreisRabatt");
-if (p40r) p40r.innerText = "Gesamtpreis abzgl. SHK-Rabatt (15%): 0,00 €";
+    const p40r = document.getElementById("angebotspreisRabatt");
+    if (p40r) p40r.innerText = "Gesamtpreis abzgl. SHK-Rabatt (15%): 0,00 €";
 
-// zurück zu "page-3"
+    // zurück zu "page-3"
     showPage("page-3");
 }
 
-		// -----------------------------
-		// SEITE 14.2 – Tackersystem UPONOR (ndf5.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 14.2 – Tackersystem UPONOR (ndf5.csv)
+// -----------------------------
 
 function loadPage142() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-14-2");
     if (!container) return;
 
@@ -1723,7 +1998,7 @@ function loadPage142() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page142Data") || "{}");
@@ -1753,8 +2028,8 @@ function loadPage142() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -1764,8 +2039,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -1781,7 +2056,7 @@ if (!headerInserted) {
                                    oninput="calcRow142(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -1813,7 +2088,7 @@ function calcRow142(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page142Data") || "{}");
@@ -1829,10 +2104,10 @@ function berechneGesamt142() {
 
     document.querySelectorAll("#page-14-2 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -1843,17 +2118,17 @@ function berechneGesamt142() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 8 – Fräsen (ndf6.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 8 – Fräsen (ndf6.csv)
+// -----------------------------
 
 function loadPage8() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-8");
     if (!container) return;
 
@@ -1865,7 +2140,7 @@ function loadPage8() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
- 		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page8Data") || "{}");
@@ -1895,8 +2170,8 @@ function loadPage8() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -1906,8 +2181,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
                     const menge = gespeicherteWerte[index] || 0;
 
                     html += `
@@ -1922,7 +2197,7 @@ if (!headerInserted) {
                                    oninput="calcRow8(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -1948,34 +2223,34 @@ if (!headerInserted) {
 }
 
 function setupFraesenHinweis() {
-  const page8 = document.getElementById("page-8");
-  if (!page8) return;
+    const page8 = document.getElementById("page-8");
+    if (!page8) return;
 
-  page8.addEventListener("input", (e) => {
-    const el = e.target;
+    page8.addEventListener("input", (e) => {
+        const el = e.target;
 
-    // nur Mengenfelder
-    if (!el.classList.contains("menge-input")) return;
+        // nur Mengenfelder
+        if (!el.classList.contains("menge-input")) return;
 
-    // nur wenn wirklich etwas eingegeben wird
-    const menge = Number(el.value) || 0;
-    if (menge <= 0) return;
+        // nur wenn wirklich etwas eingegeben wird
+        const menge = Number(el.value) || 0;
+        if (menge <= 0) return;
 
-    // merken: Fräsen wurde verwendet
-    fraesenVerwendet = true;
+        // merken: Fräsen wurde verwendet
+        fraesenVerwendet = true;
 
 
-    // Hinweis nur einmal anzeigen
-    if (fraesenHinweisGezeigt) return;
+        // Hinweis nur einmal anzeigen
+        if (fraesenHinweisGezeigt) return;
 
-    fraesenHinweisGezeigt = true;
+        fraesenHinweisGezeigt = true;
 
-    showHinweis(
-      "Achtung!\n\n" +
-      "Bei Frässystemen können je nach Entfernung und Flächengröße zusätzliche Aufschläge anfallen.\n\n" +
-      "Bitte erfragen Sie hierzu ein individuelles Angebot."
-    );
-  });
+        showHinweis(
+            "Achtung!\n\n" +
+            "Bei Frässystemen können je nach Entfernung und Flächengröße zusätzliche Aufschläge anfallen.\n\n" +
+            "Bitte erfragen Sie hierzu ein individuelles Angebot."
+        );
+    });
 }
 
 setupFraesenHinweis();
@@ -1988,7 +2263,7 @@ function calcRow8(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page8Data") || "{}");
@@ -2006,10 +2281,10 @@ function berechneGesamt8() {
 
     document.querySelectorAll("#page-8 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -2020,32 +2295,32 @@ function berechneGesamt8() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
 function updateFraesenStatus() {
 
-  // alle Fräsen-Mengenfelder auf Seite 8 prüfen
-  const inputs = document.querySelectorAll("#page-8 .menge-input");
+    // alle Fräsen-Mengenfelder auf Seite 8 prüfen
+    const inputs = document.querySelectorAll("#page-8 .menge-input");
 
-  let fraesenAktiv = false;
+    let fraesenAktiv = false;
 
-  inputs.forEach(input => {
-    const val = parseFloat(input.value) || 0;
-    if (val > 0) fraesenAktiv = true;
-  });
+    inputs.forEach(input => {
+        const val = parseFloat(input.value) || 0;
+        if (val > 0) fraesenAktiv = true;
+    });
 
-  fraesenVerwendet = fraesenAktiv;
+    fraesenVerwendet = fraesenAktiv;
 }
 
-		// -----------------------------
-		// SEITE 18 – Unterdämmung (ndf7.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 18 – Unterdämmung (ndf7.csv)
+// -----------------------------
 
 function loadPage18() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-18");
     if (!container) return;
 
@@ -2057,7 +2332,7 @@ function loadPage18() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page18Data") || "{}");
@@ -2087,8 +2362,8 @@ function loadPage18() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -2098,8 +2373,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -2115,7 +2390,7 @@ if (!headerInserted) {
                                    oninput="calcRow18(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -2147,7 +2422,7 @@ function calcRow18(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page18Data") || "{}");
@@ -2164,10 +2439,10 @@ function berechneGesamt18() {
 
     document.querySelectorAll("#page-18 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -2178,17 +2453,17 @@ function berechneGesamt18() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 20 – Verteiler & Regeltechnik (ndf8.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 20 – Verteiler & Regeltechnik (ndf8.csv)
+// -----------------------------
 
 function loadPage20() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-20");
     if (!container) return;
 
@@ -2200,7 +2475,7 @@ function loadPage20() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page20Data") || "{}");
@@ -2230,8 +2505,8 @@ function loadPage20() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -2241,8 +2516,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -2258,7 +2533,7 @@ if (!headerInserted) {
                                    oninput="calcRow20(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -2290,7 +2565,7 @@ function calcRow20(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page20Data") || "{}");
@@ -2307,10 +2582,10 @@ function berechneGesamt20() {
 
     document.querySelectorAll("#page-20 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -2321,15 +2596,15 @@ function berechneGesamt20() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 21 – Dienstleistungen (ndf9.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 21 – Dienstleistungen (ndf9.csv)
+// -----------------------------
 
-        function syncBesichtigungToPage21() {
+function syncBesichtigungToPage21() {
     const chkDetail = document.getElementById("chkDetail");
     const besichtigung = document.getElementById("besichtigung");
 
@@ -2348,7 +2623,7 @@ function berechneGesamt20() {
 
 function loadPage21() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-21");
     if (!container) return;
 
@@ -2360,7 +2635,7 @@ function loadPage21() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page21Data") || "{}");
@@ -2390,8 +2665,8 @@ function loadPage21() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -2401,8 +2676,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -2418,7 +2693,7 @@ if (!headerInserted) {
                                    oninput="calcRow21(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -2451,7 +2726,7 @@ function calcRow21(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page21Data") || "{}");
@@ -2468,10 +2743,10 @@ function berechneGesamt21() {
 
     document.querySelectorAll("#page-21 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -2482,17 +2757,17 @@ function berechneGesamt21() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 22 – Zuschläge (ndf10.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 22 – Zuschläge (ndf10.csv)
+// -----------------------------
 
 function loadPage22() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-22");
     if (!container) return;
 
@@ -2504,7 +2779,7 @@ function loadPage22() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page22Data") || "{}");
@@ -2534,8 +2809,8 @@ function loadPage22() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -2545,8 +2820,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -2562,7 +2837,7 @@ if (!headerInserted) {
                                    oninput="calcRow22(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -2594,7 +2869,7 @@ function calcRow22(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page22Data") || "{}");
@@ -2611,10 +2886,10 @@ function berechneGesamt22() {
 
     document.querySelectorAll("#page-22 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -2625,17 +2900,17 @@ function berechneGesamt22() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 9 – Estrich (ndf11.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 9 – Estrich (ndf11.csv)
+// -----------------------------
 
 function loadPage9() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-9");
     if (!container) return;
 
@@ -2647,7 +2922,7 @@ function loadPage9() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page9Data") || "{}");
@@ -2677,8 +2952,8 @@ function loadPage9() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -2688,8 +2963,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -2705,7 +2980,7 @@ if (!headerInserted) {
                                    oninput="calcRow9(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -2737,7 +3012,7 @@ function calcRow9(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page9Data") || "{}");
@@ -2754,10 +3029,10 @@ function berechneGesamt9() {
 
     document.querySelectorAll("#page-9 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -2768,17 +3043,17 @@ function berechneGesamt9() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 10 – Klett3mm (ndf2.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 10 – Klett3mm (ndf2.csv)
+// -----------------------------
 
 function loadPage10() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-10");
     if (!container) return;
 
@@ -2790,7 +3065,7 @@ function loadPage10() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page10Data") || "{}");
@@ -2820,8 +3095,8 @@ function loadPage10() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -2831,8 +3106,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -2848,7 +3123,7 @@ if (!headerInserted) {
                                    oninput="calcRow10(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -2880,7 +3155,7 @@ function calcRow10(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page10Data") || "{}");
@@ -2897,10 +3172,10 @@ function berechneGesamt10() {
 
     document.querySelectorAll("#page-10 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -2911,17 +3186,17 @@ function berechneGesamt10() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 23 – Aufbau 50mm (ndf12.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 23 – Aufbau 50mm (ndf12.csv)
+// -----------------------------
 
 function loadPage23() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-23");
     if (!container) return;
 
@@ -2933,7 +3208,7 @@ function loadPage23() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page23Data") || "{}");
@@ -2963,8 +3238,8 @@ function loadPage23() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -2974,8 +3249,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
 
                     const menge = gespeicherteWerte[index] || 0;
@@ -2992,7 +3267,7 @@ if (!headerInserted) {
                                    oninput="calcRow23(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -3024,7 +3299,7 @@ function calcRow23(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page23Data") || "{}");
@@ -3041,10 +3316,10 @@ function berechneGesamt23() {
 
     document.querySelectorAll("#page-23 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -3055,17 +3330,17 @@ function berechneGesamt23() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 24 – Aufbau 20/30mm + 3mm Deckschicht (ndf13.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 24 – Aufbau 20/30mm + 3mm Deckschicht (ndf13.csv)
+// -----------------------------
 
 function loadPage24() {
     if (!isLoggedIn()) return;
-   
+
     const container = document.getElementById("content-24");
     if (!container) return;
 
@@ -3077,7 +3352,7 @@ function loadPage24() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page24Data") || "{}");
@@ -3107,8 +3382,8 @@ function loadPage24() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -3118,8 +3393,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
 
                     const menge = gespeicherteWerte[index] || 0;
@@ -3136,7 +3411,7 @@ if (!headerInserted) {
                                    oninput="calcRow24(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -3168,7 +3443,7 @@ function calcRow24(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page24Data") || "{}");
@@ -3185,10 +3460,10 @@ function berechneGesamt24() {
 
     document.querySelectorAll("#page-24 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -3199,17 +3474,17 @@ function berechneGesamt24() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 25 – Aufbau 25mm (XPS) (ndf14.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 25 – Aufbau 25mm (XPS) (ndf14.csv)
+// -----------------------------
 
 function loadPage25() {
     if (!isLoggedIn()) return;
-   
+
     const container = document.getElementById("content-25");
     if (!container) return;
 
@@ -3221,7 +3496,7 @@ function loadPage25() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page25Data") || "{}");
@@ -3252,8 +3527,8 @@ function loadPage25() {
                 if (!isNaN(preis)) {
 
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -3263,8 +3538,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -3280,7 +3555,7 @@ if (!headerInserted) {
                                    oninput="calcRow25(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -3312,7 +3587,7 @@ function calcRow25(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page25Data") || "{}");
@@ -3329,10 +3604,10 @@ function berechneGesamt25() {
 
     document.querySelectorAll("#page-25 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -3343,17 +3618,17 @@ function berechneGesamt25() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 27 – Klettsystem Handelsmarke (ndf15.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 27 – Klettsystem Handelsmarke (ndf15.csv)
+// -----------------------------
 
 function loadPage27() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-27");
     if (!container) return;
 
@@ -3365,7 +3640,7 @@ function loadPage27() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page27Data") || "{}");
@@ -3395,8 +3670,8 @@ let headerInserted = false;
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -3406,8 +3681,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -3423,7 +3698,7 @@ if (!headerInserted) {
                                    oninput="calcRow27(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -3455,7 +3730,7 @@ function calcRow27(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page27Data") || "{}");
@@ -3472,10 +3747,10 @@ function berechneGesamt27() {
 
     document.querySelectorAll("#page-27 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -3486,17 +3761,17 @@ function berechneGesamt27() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 28 – Klettsystem Uponor (ndf16.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 28 – Klettsystem Uponor (ndf16.csv)
+// -----------------------------
 
 function loadPage28() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-28");
     if (!container) return;
 
@@ -3508,7 +3783,7 @@ function loadPage28() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page28Data") || "{}");
@@ -3538,8 +3813,8 @@ function loadPage28() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -3549,8 +3824,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -3566,7 +3841,7 @@ if (!headerInserted) {
                                    oninput="calcRow28(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -3598,7 +3873,7 @@ function calcRow28(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page28Data") || "{}");
@@ -3615,10 +3890,10 @@ function berechneGesamt28() {
 
     document.querySelectorAll("#page-28 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -3629,17 +3904,17 @@ function berechneGesamt28() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 30 – Noppensystem Handelsmarke (ndf17.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 30 – Noppensystem Handelsmarke (ndf17.csv)
+// -----------------------------
 
 function loadPage30() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-30");
     if (!container) return;
 
@@ -3651,7 +3926,7 @@ function loadPage30() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page30Data") || "{}");
@@ -3681,8 +3956,8 @@ function loadPage30() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -3692,8 +3967,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -3709,7 +3984,7 @@ if (!headerInserted) {
                                    oninput="calcRow30(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -3741,7 +4016,7 @@ function calcRow30(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page30Data") || "{}");
@@ -3758,10 +4033,10 @@ function berechneGesamt30() {
 
     document.querySelectorAll("#page-30 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -3772,17 +4047,17 @@ function berechneGesamt30() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 31 – Noppensystem Uponor (ndf18.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 31 – Noppensystem Uponor (ndf18.csv)
+// -----------------------------
 
 function loadPage31() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-31");
     if (!container) return;
 
@@ -3794,7 +4069,7 @@ function loadPage31() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page31Data") || "{}");
@@ -3824,8 +4099,8 @@ function loadPage31() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -3835,8 +4110,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -3852,7 +4127,7 @@ if (!headerInserted) {
                                    oninput="calcRow31(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -3884,7 +4159,7 @@ function calcRow31(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page31Data") || "{}");
@@ -3901,10 +4176,10 @@ function berechneGesamt31() {
 
     document.querySelectorAll("#page-31 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -3915,17 +4190,17 @@ function berechneGesamt31() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 32 – Noppensystem Roth (ndf19.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 32 – Noppensystem Roth (ndf19.csv)
+// -----------------------------
 
 function loadPage32() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-32");
     if (!container) return;
 
@@ -3937,7 +4212,7 @@ function loadPage32() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page32Data") || "{}");
@@ -3967,8 +4242,8 @@ function loadPage32() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -3978,8 +4253,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -3995,7 +4270,7 @@ if (!headerInserted) {
                                    oninput="calcRow32(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -4027,7 +4302,7 @@ function calcRow32(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page32Data") || "{}");
@@ -4044,10 +4319,10 @@ function berechneGesamt32() {
 
     document.querySelectorAll("#page-32 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -4058,17 +4333,17 @@ function berechneGesamt32() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 33 – Industrieboden (ndf20.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 33 – Industrieboden (ndf20.csv)
+// -----------------------------
 
 function loadPage33() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-33");
     if (!container) return;
 
@@ -4080,7 +4355,7 @@ function loadPage33() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
 
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page33Data") || "{}");
@@ -4110,8 +4385,8 @@ function loadPage33() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -4121,8 +4396,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -4138,7 +4413,7 @@ if (!headerInserted) {
                                    oninput="calcRow33(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -4170,7 +4445,7 @@ function calcRow33(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page33Data") || "{}");
@@ -4187,10 +4462,10 @@ function berechneGesamt33() {
 
     document.querySelectorAll("#page-33 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -4201,17 +4476,17 @@ function berechneGesamt33() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// SEITE 13 – unbeheizte Fläche (ndf21.csv)
-		// -----------------------------
+// -----------------------------
+// SEITE 13 – unbeheizte Fläche (ndf21.csv)
+// -----------------------------
 
 function loadPage13() {
     if (!isLoggedIn()) return;
-    
+
     const container = document.getElementById("content-13");
     if (!container) return;
 
@@ -4223,7 +4498,7 @@ function loadPage13() {
 
             const lines = data.split("\n").slice(1);
             let html = "";
-		let headerInserted = false;
+            let headerInserted = false;
             const gespeicherteWerte =
                 JSON.parse(localStorage.getItem("page13Data") || "{}");
 
@@ -4252,8 +4527,8 @@ function loadPage13() {
                 const preis = parseFloat(colD?.replace(",", "."));
                 if (!isNaN(preis)) {
 
-if (!headerInserted) {
-        html += `
+                    if (!headerInserted) {
+                        html += `
           <div class="row table-header">
             <div></div>
             <div>Beschreibung</div>
@@ -4263,8 +4538,8 @@ if (!headerInserted) {
             <div style="text-align:right;">Positionsergebnis</div>
           </div>
         `;
-        headerInserted = true;
-}
+                        headerInserted = true;
+                    }
 
                     const menge = gespeicherteWerte[index] || 0;
 
@@ -4280,7 +4555,7 @@ if (!headerInserted) {
                                    oninput="calcRow13(this, ${preis}, ${index})">
 
                             <div class="col-d">
-                                ${preis.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+                                ${preis.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </div>
 
                             <div class="col-e">0,00 €</div>
@@ -4312,7 +4587,7 @@ function calcRow13(input, preis, index) {
 
     const sum = menge * preis;
     ergebnis.innerText =
-        sum.toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+        sum.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 
     let gespeicherteWerte =
         JSON.parse(localStorage.getItem("page13Data") || "{}");
@@ -4329,10 +4604,10 @@ function berechneGesamt13() {
 
     document.querySelectorAll("#page-13 .col-e").forEach(el => {
         const wert = parseFloat(
-            el.innerText.replace("€","")
-                       .replace(/\./g,"")
-                       .replace(",",".")
-                       .trim()
+            el.innerText.replace("€", "")
+                .replace(/\./g, "")
+                .replace(",", ".")
+                .trim()
         ) || 0;
         sum += wert;
     });
@@ -4343,41 +4618,41 @@ function berechneGesamt13() {
     if (gesamtDiv) {
         gesamtDiv.innerText =
             "Gesamtsumme Angebot: " +
-            getGesamtAngebotssumme().toLocaleString("de-DE",{minimumFractionDigits:2}) + " €";
+            getGesamtAngebotssumme().toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
     }
 }
 
-		// -----------------------------
-		// Eingabefelder - 0 entfernen bei Eingabe
-		// -----------------------------
+// -----------------------------
+// Eingabefelder - 0 entfernen bei Eingabe
+// -----------------------------
 
-     function setupAutoClearZeroInputs() {
-       document.addEventListener("focusin", (e) => {
-         const el = e.target;
-         if (el && el.classList && el.classList.contains("menge-input")) {
-           if (el.value === "0") el.value = "";
-         }
-       });
-
-// Optional: falls man mit Wheel/Arrow Keys aus Versehen wieder 0 reinbekommt
-      document.addEventListener("input", (e) => {
+function setupAutoClearZeroInputs() {
+    document.addEventListener("focusin", (e) => {
         const el = e.target;
         if (el && el.classList && el.classList.contains("menge-input")) {
-          if (el.value === "0") {
-// wenn wirklich 0 eingegeben wurde, lassen wir es drin -> daher NICHT löschen
-          }
+            if (el.value === "0") el.value = "";
         }
-      });
-    }
+    });
 
-    setupAutoClearZeroInputs();
+    // Optional: falls man mit Wheel/Arrow Keys aus Versehen wieder 0 reinbekommt
+    document.addEventListener("input", (e) => {
+        const el = e.target;
+        if (el && el.classList && el.classList.contains("menge-input")) {
+            if (el.value === "0") {
+                // wenn wirklich 0 eingegeben wurde, lassen wir es drin -> daher NICHT löschen
+            }
+        }
+    });
+}
 
-		// -----------------------------
-		// Spaltenüberschriften
-		// -----------------------------
+setupAutoClearZeroInputs();
+
+// -----------------------------
+// Spaltenüberschriften
+// -----------------------------
 
 function renderTableHeader() {
-  return `
+    return `
     <div class="row table-header">
       <div></div>
       <div>Beschreibung</div>
@@ -4389,182 +4664,344 @@ function renderTableHeader() {
   `;
 }
 
-		// -----------------------------
-		// Blob - Button - PDF download / teilen 
-		// -----------------------------
+// -----------------------------
+// Blob - Button - PDF download / teilen 
+// -----------------------------
 
 async function sharePdf() {
-// ---- Mobile-Fix: html2canvas rendert sonst gerne "aus der Mitte" ----
-  const oldScrollX = window.scrollX || 0;
-  const oldScrollY = window.scrollY || 0;
+    // ---- Mobile-Fix: html2canvas rendert sonst gerne "aus der Mitte" ----
+    const oldScrollX = window.scrollX || 0;
+    const oldScrollY = window.scrollY || 0;
 
-// Seite nach ganz oben, damit Canvas sauber rendert
-  window.scrollTo(0, 0);
-  await new Promise(r => requestAnimationFrame(r));
+    // Seite nach ganz oben, damit Canvas sauber rendert
+    window.scrollTo(0, 0);
+    await new Promise(r => requestAnimationFrame(r));
 
-  const h2p = window.html2pdf;
-  if (!h2p) {
-    alert("html2pdf ist nicht geladen. Prüfe: Script-Tag in index.html muss VOR app.js stehen und darf nicht geblockt werden.");
-    window.scrollTo(oldScrollX, oldScrollY);
-    return;
-  }
-
-  const el = document.getElementById("page-40");
-
-// Warten bis Seite 40 komplett aufgebaut ist (wichtig fürs Smartphone!)
-  if (typeof page40Promise !== "undefined" && page40Promise) {
-    await page40Promise;
-// kurzer Render-Puffer
-    await new Promise(r => setTimeout(r, 150));
-  }
-
-  if (!el) {
-    alert("Seite 40 nicht gefunden.");
-    window.scrollTo(oldScrollX, oldScrollY);
-    return;
-  }
-
-  const angebotTyp = localStorage.getItem("angebotTyp") || "kv";
-  const datum = new Date().toLocaleDateString("de-DE").replaceAll(".", "-");
-  const filename = (angebotTyp === "anfrage")
-    ? `Anfrage_${datum}.pdf`
-    : `Kostenvoranschlag_${datum}.pdf`;
-
-  document.body.classList.add("pdf-mode");
-
-// Logo nur fürs PDF in Seite 40 klonen
-  let tempLogo = null;
-  const existingLogo = document.querySelector("img.logo");
-  if (existingLogo) {
-    tempLogo = existingLogo.cloneNode(true);
-    tempLogo.classList.add("temp-pdf-logo");
-    el.insertBefore(tempLogo, el.firstChild);
-  }
-
-  await new Promise(r => requestAnimationFrame(r));
-
-// Desktop-Erkennung: hier KEIN navigator.share() verwenden
-  const isMobile =
-    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-    (navigator.maxTouchPoints > 1 && window.matchMedia("(max-width: 1024px)").matches);
-
-  try {
-    const opt = {
-      margin: 10,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: document.documentElement.scrollWidth,
-        windowHeight: document.documentElement.scrollHeight
-      },
-      pagebreak: { mode: ["css", "legacy"] },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-    };
-
-    const worker = h2p().set(opt).from(el).toPdf();
-    const pdf = await worker.get("pdf");
-    if (!pdf) throw new Error("PDF-Objekt ist null.");
-
-    const blob = pdf.output("blob");
-    const file = new File([blob], filename, { type: "application/pdf" });
-
- // 1) NUR AUF MOBILE teilen versuchen (damit auf Windows nicht dieses Share-Fenster aufgeht)
-    if (isMobile && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ title: filename, text: "PDF", files: [file] });
+    const h2p = window.html2pdf;
+    if (!h2p) {
+        alert("html2pdf ist nicht geladen. Prüfe: Script-Tag in index.html muss VOR app.js stehen und darf nicht geblockt werden.");
+        window.scrollTo(oldScrollX, oldScrollY);
         return;
-      } catch (e) {
-        console.warn("Mobile Share blockiert/abgebrochen, Fallback:", e);
-        // Fallback unten
-      }
     }
 
- // 2) Fallback: Öffnen + Download (Desktop immer, Mobile wenn Share nicht geht)
-    const url = URL.createObjectURL(blob);
+    const el = document.getElementById("page-40");
 
- // Öffnen ist oft der bequemste Weg, um danach in Outlook/WhatsApp manuell anzuhängen
-    window.open(url, "_blank", "noopener");
+    // Warten bis Seite 40 komplett aufgebaut ist (wichtig fürs Smartphone!)
+    if (typeof page40Promise !== "undefined" && page40Promise) {
+        await page40Promise;
+        // kurzer Render-Puffer
+        await new Promise(r => setTimeout(r, 150));
+    }
 
- // Download als verlässlicher Pfad (vor allem für Outlook)
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    if (!el) {
+        alert("Seite 40 nicht gefunden.");
+        window.scrollTo(oldScrollX, oldScrollY);
+        return;
+    }
 
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    const angebotTyp = localStorage.getItem("angebotTyp") || "kv";
+    const datum = new Date().toLocaleDateString("de-DE").replaceAll(".", "-");
+    const filename = (angebotTyp === "anfrage")
+        ? `Anfrage_${datum}.pdf`
+        : `Kostenvoranschlag_${datum}.pdf`;
 
-  } catch (err) {
-    console.error("sharePdf Fehler:", err);
-    alert("PDF konnte nicht erstellt/geteilt werden:\n" + (err?.message || err));
-  } finally {
-    if (tempLogo) tempLogo.remove();
-    document.body.classList.remove("pdf-mode");
-    window.scrollTo(oldScrollX, oldScrollY);
-  }
+    document.body.classList.add("pdf-mode");
+
+    // Logo nur fürs PDF in Seite 40 klonen
+    let tempLogo = null;
+    const existingLogo = document.querySelector("img.logo");
+    if (existingLogo) {
+        tempLogo = existingLogo.cloneNode(true);
+        tempLogo.classList.add("temp-pdf-logo");
+        el.insertBefore(tempLogo, el.firstChild);
+    }
+
+    await new Promise(r => requestAnimationFrame(r));
+
+    // Desktop-Erkennung: hier KEIN navigator.share() verwenden
+    const isMobile =
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        (navigator.maxTouchPoints > 1 && window.matchMedia("(max-width: 1024px)").matches);
+
+    try {
+        const opt = {
+            margin: 10,
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#ffffff",
+                scrollX: 0,
+                scrollY: 0,
+                windowWidth: document.documentElement.scrollWidth,
+                windowHeight: document.documentElement.scrollHeight
+            },
+            pagebreak: { mode: ["css", "legacy"] },
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+        };
+
+        const worker = h2p().set(opt).from(el).toPdf();
+        const pdf = await worker.get("pdf");
+        if (!pdf) throw new Error("PDF-Objekt ist null.");
+
+        const blob = pdf.output("blob");
+        const file = new File([blob], filename, { type: "application/pdf" });
+
+        // 1) NUR AUF MOBILE teilen versuchen (damit auf Windows nicht dieses Share-Fenster aufgeht)
+        if (isMobile && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({ title: filename, text: "PDF", files: [file] });
+                return;
+            } catch (e) {
+                console.warn("Mobile Share blockiert/abgebrochen, Fallback:", e);
+                // Fallback unten
+            }
+        }
+
+        // 2) Fallback: Öffnen + Download (Desktop immer, Mobile wenn Share nicht geht)
+        const url = URL.createObjectURL(blob);
+
+        // Öffnen ist oft der bequemste Weg, um danach in Outlook/WhatsApp manuell anzuhängen
+        window.open(url, "_blank", "noopener");
+
+        // Download als verlässlicher Pfad (vor allem für Outlook)
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+
+    } catch (err) {
+        console.error("sharePdf Fehler:", err);
+        alert("PDF konnte nicht erstellt/geteilt werden:\n" + (err?.message || err));
+    } finally {
+        if (tempLogo) tempLogo.remove();
+        document.body.classList.remove("pdf-mode");
+        window.scrollTo(oldScrollX, oldScrollY);
+    }
 }
 
 window.sharePdf = sharePdf;
 
-		// -----------------------------
-		// showLoader40 - EIERUHR 
-		// -----------------------------
+async function buildPage40PdfBlob() {
+    const oldScrollX = window.scrollX || 0;
+    const oldScrollY = window.scrollY || 0;
 
-function showLoader40(show) {
-  const l = document.getElementById("loader40");
-  if (!l) return;
-  l.classList.toggle("hidden", !show);
+    window.scrollTo(0, 0);
+    await new Promise(r => requestAnimationFrame(r));
+
+    const h2p = window.html2pdf;
+    if (!h2p) {
+        window.scrollTo(oldScrollX, oldScrollY);
+        throw new Error("html2pdf ist nicht geladen.");
+    }
+
+    const el = document.getElementById("page-40");
+    if (!el) {
+        window.scrollTo(oldScrollX, oldScrollY);
+        throw new Error("Seite 40 nicht gefunden.");
+    }
+
+    if (page40Promise) {
+        await page40Promise;
+        await new Promise(r => setTimeout(r, 150));
+    }
+
+    const angebotTyp = localStorage.getItem("angebotTyp") || "kv";
+    const datum = new Date().toLocaleDateString("de-DE").replaceAll(".", "-");
+
+    const filename = (angebotTyp === "anfrage")
+        ? `Anfrage_PJ-KalkPro_${datum}.pdf`
+        : `Kostenvoranschlag_PJ-KalkPro_${datum}.pdf`;
+
+    document.body.classList.add("pdf-mode");
+
+    let tempLogo = null;
+    const existingLogo = document.querySelector("img.logo");
+    if (existingLogo) {
+        tempLogo = existingLogo.cloneNode(true);
+        tempLogo.classList.add("temp-pdf-logo");
+        el.insertBefore(tempLogo, el.firstChild);
+    }
+
+    await new Promise(r => requestAnimationFrame(r));
+
+    try {
+        const opt = {
+            margin: 10,
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#ffffff",
+                scrollX: 0,
+                scrollY: 0,
+                windowWidth: document.documentElement.scrollWidth,
+                windowHeight: document.documentElement.scrollHeight
+            },
+            pagebreak: { mode: ["css", "legacy"] },
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+        };
+
+        const worker = h2p().set(opt).from(el).toPdf();
+        const pdf = await worker.get("pdf");
+        if (!pdf) throw new Error("PDF-Objekt ist null.");
+
+        const blob = pdf.output("blob");
+        return { blob, filename };
+
+    } finally {
+        if (tempLogo) tempLogo.remove();
+        document.body.classList.remove("pdf-mode");
+        window.scrollTo(oldScrollX, oldScrollY);
+    }
 }
 
-		// -----------------------------
+async function sendRequestPdfByEmail() {
+    const angebotTyp = localStorage.getItem("angebotTyp") || "kv";
+
+    if (angebotTyp !== "anfrage") {
+        showHinweis("Der E-Mail-Versand ist nur für Anfragen vorgesehen.");
+        return;
+    }
+
+    const page5Data = JSON.parse(localStorage.getItem("page5Data") || "{}");
+
+    const requesterEmail = (page5Data["pj-email"] || "").trim().toLowerCase();
+    const ccEmail = (page5Data["cc-email"] || "").trim().toLowerCase();
+    const shkEmail = (page5Data["shk-email"] || "").trim().toLowerCase();
+
+    if (!requesterEmail) {
+        showHinweis("Bitte geben Sie auf Seite 5 die E-Mail-Adresse des PJ-Ansprechpartners ein.");
+        return;
+    }
+
+    if (!ccEmail) {
+        showHinweis("Bitte geben Sie auf Seite 5 eine CC-E-Mail-Adresse ein.");
+        return;
+    }
+
+    try {
+        showLoader40(true);
+
+        const { blob, filename } = await buildPage40PdfBlob();
+
+        const requesterKey = requesterEmail.replace(/[^a-z0-9._-]/g, "_");
+        const path = `requests/${requesterKey}/${Date.now()}_${filename}`;
+
+        const fileRef = storageRef(blazeStorage, path);
+        await uploadBytes(fileRef, blob, {
+            contentType: "application/pdf"
+        });
+
+        const currentUploadedFiles = JSON.parse(localStorage.getItem("uploadedFiles") || "[]");
+
+        const sendPdfMail = httpsCallable(blazeFunctions, "sendRequestPdfMail");
+
+        await sendPdfMail({
+            toolName: "PJ KalkPro2.0",
+            storagePath: path,
+            filename,
+            to: "info@ndf-gmbh.de",
+            cc: ccEmail,
+            requesterEmail,
+            angebotTyp,
+            shkName: page5Data["shk-name"] || "",
+            shkContact: page5Data["shk-contact"] || "",
+            shkEmail,
+            siteAddress: page5Data["site-address"] || "",
+            offerDate: page5Data["offer-date"] || "",
+            executionDate: page5Data["execution-date"] || "",
+            attachmentFiles: currentUploadedFiles
+        });
+
+        showHinweis("Anfrage erfolgreich versendet.");
+
+        await clearUploadedFilesFromStorage();
+        clearInputs();
+        showPage("page-3");
+
+    } catch (err) {
+        console.error("sendRequestPdfByEmail Fehler:", err);
+        showHinweis("Die Anfrage konnte nicht versendet werden:\n" + (err?.message || err));
+    } finally {
+        showLoader40(false);
+    }
+}
+
+function sendPage40MailByType() {
+    const angebotTyp = localStorage.getItem("angebotTyp") || "kv";
+
+    if (angebotTyp === "anfrage") {
+        sendRequestPdfByEmail();
+    } else {
+        showHinweis("Der E-Mail-Versand ist nur für Anfragen vorgesehen. Kostenvoranschläge bitte als PDF herunterladen.");
+    }
+}
+
+// -----------------------------
+// showLoader40 - EIERUHR 
+// -----------------------------
+
+function showLoader40(show) {
+    const l = document.getElementById("loader40");
+    if (!l) return;
+    l.classList.toggle("hidden", !show);
+}
+
+// -----------------------------
 
 window.addEventListener("popstate", (e) => {
-  const page = e.state?.page;
+    const page = e.state?.page;
 
-  if (!page) return;
+    if (!page) return;
 
-  // Sicherheit: Login-Seite blockieren, wenn eingeloggt
-  if (page === "page-login" && auth.currentUser) {
-    showPage("page-3", true);
-    return;
-  }
+    // Sicherheit: Login-Seite blockieren, wenn eingeloggt
+    if (page === "page-login" && auth.currentUser) {
+        showPage("page-3", true);
+        return;
+    }
 
-  showPage(page, true);
+    showPage(page, true);
 });
 
 function getInitialPage() {
-  const hash = location.hash.replace("#", "");
-  return hash || "page-3";
+    const hash = location.hash.replace("#", "");
+    return hash || "page-3";
 }
 
-		// -----------------------------
+// -----------------------------
 
 function resetLogoutTimerByActivity() {
-  const isUserKnown = !!auth.currentUser || !!currentUser;
-  if (!isUserKnown) return;
+    const isUserKnown = !!auth.currentUser || !!currentUser;
+    if (!isUserKnown) return;
 
-  setLogoutDeadline();
-  checkLogoutTimer();
+    setLogoutDeadline();
+    checkLogoutTimer();
 }
 
 ["mousemove", "keydown", "click", "input", "scroll", "touchstart"].forEach(evt => {
-  document.addEventListener(evt, resetLogoutTimerByActivity, { passive: true });
+    document.addEventListener(evt, resetLogoutTimerByActivity, { passive: true });
 });
 
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) checkLogoutTimer();
+    if (!document.hidden) checkLogoutTimer();
 });
 
 window.addEventListener("focus", checkLogoutTimer);
-		
-		// -----------------------------
-		// Funktionen für HTML global verfügbar machen
-		// -----------------------------
+
+document.addEventListener("input", (e) => {
+    if (e.target?.classList?.contains("menge-input")) {
+        setTimeout(updateKpSelectionSummary, 0);
+    }
+});
+
+// -----------------------------
+// Funktionen für HTML global verfügbar machen
+// -----------------------------
 
 window.login = login;
 window.forgotPassword = forgotPassword;
@@ -4643,3 +5080,6 @@ window.berechneGesamt33 = berechneGesamt33;
 window.loadPage13 = loadPage13;
 window.calcRow13 = calcRow13;
 window.berechneGesamt13 = berechneGesamt13;
+window.buildPage40PdfBlob = buildPage40PdfBlob;
+window.sendRequestPdfByEmail = sendRequestPdfByEmail;
+window.sendPage40MailByType = sendPage40MailByType;
