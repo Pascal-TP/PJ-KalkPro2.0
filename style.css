@@ -955,3 +955,29 @@ body {
     position: static;
   }
 }
+
+.uploaded-files-section {
+  max-width: 900px;
+  margin: 24px auto 18px auto;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f9fafb;
+  text-align: left;
+}
+
+.uploaded-files-section h3 {
+  margin: 0 0 10px 0;
+  color: var(--primary);
+  font-size: 16px;
+}
+
+.uploaded-file-summary-item {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.uploaded-file-summary-item:last-child {
+  border-bottom: none;
+}

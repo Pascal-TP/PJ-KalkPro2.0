@@ -448,10 +448,12 @@ async function showPage(id, fromHistory = false) {
         try {
             page40Promise = loadPage40();
             await page40Promise;
+            renderUploadedFilesSummary();
         } finally {
             showLoader40(false);
         }
     }
+
     // Checkboxen beim Seitenwechsel zurücksetzen
     const cb1 = document.getElementById("chkPrivacyAck");
     if (cb1) cb1.checked = false;
@@ -1138,6 +1140,29 @@ function renderFileList() {
     `;
         container.appendChild(div);
     });
+}
+
+function renderUploadedFilesSummary() {
+    const section = document.getElementById("uploaded-files-section");
+    const summary = document.getElementById("uploaded-files-summary");
+
+    if (!section || !summary) return;
+
+    const files = JSON.parse(localStorage.getItem("uploadedFiles") || "[]");
+
+    if (!files.length) {
+        section.style.display = "none";
+        summary.innerHTML = "";
+        return;
+    }
+
+    section.style.display = "block";
+
+    summary.innerHTML = files.map(file => `
+        <div class="uploaded-file-summary-item">
+            ${file.name}
+        </div>
+    `).join("");
 }
 
 async function removeFile(index) {
