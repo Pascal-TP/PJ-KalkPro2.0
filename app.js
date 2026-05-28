@@ -119,7 +119,15 @@ function updateKpNavigation(pageId) {
         group.classList.remove("open");
     });
 
-    const sanierungPages = new Set(["page-6", "page-8", "page-10", "page-11"]);
+    const sanierungPages = new Set([
+        "page-6",
+        "page-8",
+        "page-10",
+        "page-11",
+        "page-23",
+        "page-24",
+        "page-25"
+    ]);
 
     const neubauPages = new Set([
         "page-7",

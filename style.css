@@ -994,3 +994,17 @@ body {
 .uploaded-file-summary-item:last-child {
   border-bottom: none;
 }
+
+.print-logo {
+  display: none;
+  width: 240px;
+  margin: 0 auto 20px auto;
+}
+
+@media print {
+
+  .print-logo {
+    display: block !important;
+  }
+
+}
