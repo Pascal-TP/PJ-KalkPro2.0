@@ -120,7 +120,14 @@ function updateKpNavigation(pageId) {
     });
 
     const sanierungPages = new Set(["page-6", "page-8", "page-10", "page-11"]);
-    const neubauPages = new Set(["page-7", "page-14-1", "page-14", "page-14-2", "page-14-3", "page-26", "page-29", "page-33"]);
+
+    const neubauPages = new Set([
+        "page-7",
+        "page-14-1", "page-14", "page-14-2", "page-14-3",
+        "page-26", "page-27", "page-28",
+        "page-29", "page-30", "page-31", "page-32",
+        "page-33"
+    ]);
 
     if (sanierungPages.has(pageId)) {
         document.querySelector('.kp-subnav[data-parent="sanierung"]')?.classList.add("open");
@@ -902,6 +909,7 @@ function submitPage5() {
         { id: "pj-contact", name: "Ansprechpartner bei PJ" },
         { id: "pj-email", name: "Ansprechpartner E-Mail bei PJ" },
         { id: "pj-phone", name: "Ansprechpartner Telefon-Nr. bei PJ" },
+        { id: "cc-email", name: "CC E-Mail-Adresse" },
         { id: "pj-number", name: "SHK - PJ-Kunden-Nr." },
         { id: "shk-name", name: "SHK Name/Firma" },
         { id: "shk-contact", name: "SHK Ansprechpartner" },
@@ -954,6 +962,69 @@ function submitPage5() {
 
     showPage(detailAktiv ? "page-21" : "page-4");
 }
+
+function submitPage5ToOutput() {
+    const detailAktiv = !!document.getElementById("chkDetail")?.checked;
+
+    const fields = [
+        { id: "pj-contact", name: "Ansprechpartner bei PJ" },
+        { id: "pj-email", name: "Ansprechpartner E-Mail bei PJ" },
+        { id: "pj-phone", name: "Ansprechpartner Telefon-Nr. bei PJ" },
+        { id: "cc-email", name: "CC E-Mail-Adresse" },
+        { id: "pj-number", name: "SHK - PJ-Kunden-Nr." },
+        { id: "shk-name", name: "SHK Name/Firma" },
+        { id: "shk-contact", name: "SHK Ansprechpartner" },
+        { id: "shk-email", name: "SHK E-Mail" },
+        { id: "shk-phone", name: "SHK Telefon-Nr." },
+        { id: "site-address", name: "Adresse Baustelle" },
+        { id: "execution-date", name: "Gewünschter Ausführungstermin" }
+    ];
+
+    if (detailAktiv) {
+        fields.push(
+            { id: "offer-date", name: "Angebotsabgabe bis" },
+            { id: "estrich", name: "Estrich anbieten?" },
+            { id: "bodenbelag", name: "Bodenbelag anbieten?" },
+            { id: "systemmarke", name: "Systemmarke" },
+            { id: "system", name: "System" },
+            { id: "rohrtyp1", name: "Rohrtyp Kunststoffrohr" },
+            { id: "rohrtyp2", name: "Rohrtyp Metallrohr" },
+            { id: "dämmung", name: "Dämmung" },
+            { id: "wärmeleitgruppe1", name: "Wärmeleitgruppe (WLG) Unterdämmung:" },
+            { id: "wärmeleitgruppe2", name: "Wärmeleitgruppe (WLG) Systemdämmung:" },
+            { id: "aufbauhöhe", name: "Aufbauhöhe" },
+            { id: "unbeheizt", name: "Unbeheizte Fläche" },
+            { id: "heizkreisverteiler", name: "Heizkreisverteiler" },
+            { id: "besichtigung", name: "Baustellenbesichtigung" },
+            { id: "schnellauslegung", name: "Schnellauslegung" },
+            { id: "berechnung", name: "Heizflächenberechnung" },
+            { id: "heizlastberechnung", name: "Heizlastberechnung" }
+        );
+    }
+
+    const missing = [];
+
+    fields.forEach(f => {
+        const el = document.getElementById(f.id);
+        const val = (el?.value || "").trim();
+        if (!val) missing.push(f.name);
+    });
+
+    const errorDiv = document.getElementById("page5-error");
+
+    if (missing.length > 0) {
+        errorDiv.innerText = "Bitte folgende Felder ausfüllen:\n" + missing.join(", ");
+        return;
+    }
+
+    errorDiv.innerText = "";
+
+    savePage5Data();
+    localStorage.setItem("angebotTyp", "anfrage");
+    showPage("page-40");
+}
+
+window.submitPage5ToOutput = submitPage5ToOutput;
 
 function savePage5Data() {
     const ids = [
