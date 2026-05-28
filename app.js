@@ -1838,6 +1838,14 @@ function direktZumAngebot() {
 }
 
 // -----------------------------
+// SEITE 40 – printPage - (Button "Drucken / als PDF speichern")
+// -----------------------------
+
+function printPage40() {
+    window.print();
+}
+
+// -----------------------------
 // SEITE 40 – sendMail - (Button "Als Text-Mail versenden")
 // -----------------------------
 
@@ -4874,43 +4882,6 @@ async function sharePdf() {
 
 window.sharePdf = sharePdf;
 
-async function printPage40PdfBlob() {
-    let url = null;
-
-    try {
-        showLoader40(true);
-
-        const { blob } = await buildPage40PdfBlob();
-        url = URL.createObjectURL(blob);
-
-        const printWindow = window.open(url, "_blank");
-
-        if (!printWindow) {
-            showHinweis("Der Druck konnte nicht geöffnet werden. Bitte Pop-up-Blocker prüfen oder die PDF herunterladen.");
-            return;
-        }
-
-        printWindow.onload = () => {
-            setTimeout(() => {
-                printWindow.focus();
-                printWindow.print();
-            }, 800);
-        };
-
-        // Nicht sofort schließen/revoken!
-        setTimeout(() => {
-            if (url) URL.revokeObjectURL(url);
-        }, 60000);
-
-    } catch (err) {
-        console.error("printPage40PdfBlob Fehler:", err);
-        showHinweis("Der Ausdruck konnte nicht vorbereitet werden:\n" + (err?.message || err));
-    } finally {
-        showLoader40(false);
-    }
-}
-
-window.printPage40PdfBlob = printPage40PdfBlob;
 
 async function buildPage40PdfBlob() {
     const oldScrollX = window.scrollX || 0;
