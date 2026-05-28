@@ -423,6 +423,7 @@ body.app-locked .page {
 
 body.app-locked #page-login.active,
 body.app-locked #page-start.active,
+body.app-locked #page-privacy.active,
 body.app-locked #page-hinweis.active {
   display: block !important;
 }
@@ -622,8 +623,13 @@ button.btn-disabled:hover {
   transform: none !important;
 }
 
-/* Allg.Hinweise-Überschriften wirklich fett */
+/* Allg.Hinweise und Datenschutz -Überschriften wirklich fett */
 #page-hinweis h3 {
+  font-weight: 800 !important;
+  margin: 16px 0 8px;
+}
+
+#page-privacy h3 {
   font-weight: 800 !important;
   margin: 16px 0 8px;
 }
