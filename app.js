@@ -4979,13 +4979,20 @@ async function sendRequestPdfByEmail() {
 
     const page5Data = JSON.parse(localStorage.getItem("page5Data") || "{}");
 
-    const requesterEmail = (page5Data["pj-email"] || "").trim().toLowerCase();
+    const loginEmail = (auth.currentUser?.email || currentUser?.email || "").trim().toLowerCase();
+
+    const pjEmail = (page5Data["pj-email"] || "").trim().toLowerCase();
     const ccEmail = (page5Data["cc-email"] || "").trim().toLowerCase();
     const shkEmail = (page5Data["shk-email"] || "").trim().toLowerCase();
 
-    const loginEmail = auth.currentUser?.email || "";
+    const requesterEmail = loginEmail;
 
-    if (!requesterEmail) {
+    if (!loginEmail) {
+        showHinweis("Der angemeldete Benutzer konnte nicht ermittelt werden. Bitte neu anmelden.");
+        return;
+    }
+
+    if (!pjEmail) {
         showHinweis("Bitte geben Sie auf Seite 5 die E-Mail-Adresse des PJ-Ansprechpartners ein.");
         return;
     }
@@ -5019,6 +5026,7 @@ async function sendRequestPdfByEmail() {
             to: "info@ndf-gmbh.de",
             cc: ccEmail,
             requesterEmail,
+            pjEmail,
             loginEmail,
             angebotTyp,
             shkName: page5Data["shk-name"] || "",
