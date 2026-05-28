@@ -4983,6 +4983,8 @@ async function sendRequestPdfByEmail() {
     const ccEmail = (page5Data["cc-email"] || "").trim().toLowerCase();
     const shkEmail = (page5Data["shk-email"] || "").trim().toLowerCase();
 
+    const loginEmail = auth.currentUser?.email || "";
+
     if (!requesterEmail) {
         showHinweis("Bitte geben Sie auf Seite 5 die E-Mail-Adresse des PJ-Ansprechpartners ein.");
         return;
@@ -5017,6 +5019,7 @@ async function sendRequestPdfByEmail() {
             to: "info@ndf-gmbh.de",
             cc: ccEmail,
             requesterEmail,
+            loginEmail,
             angebotTyp,
             shkName: page5Data["shk-name"] || "",
             shkContact: page5Data["shk-contact"] || "",
