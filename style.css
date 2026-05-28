@@ -673,11 +673,15 @@ body {
 .kp-hero {
   max-width: 1500px;
   margin: 18px auto 14px auto;
-  padding: 0 18px;
+  padding: 14px 18px;
   display: grid;
   grid-template-columns: 1fr auto;
-  align-items: start;
+  align-items: center;
   gap: 18px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
 }
 
 .kp-hero-left {
